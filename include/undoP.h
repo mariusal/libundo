@@ -27,7 +27,7 @@
 /* undo_error.c */
 #define UNDO_SUCCESS               return UNDO_NOERROR;
 #define UNDO_ERROR(undo, err)      return (undo_set_error(undo, err), (err));
-#define UNDO_ERROR_NULL(undo, err) return (undo_set_error(undo, err), NULL);
+#define UNDO_ERROR_NULL(undo, err) return (undo_set_error(undo, err), (void *)NULL);
 
 void undo_set_error(UNDO *undo, int err);
 
