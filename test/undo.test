@@ -310,8 +310,7 @@ int main() {
 
 int main() {
 	UNDO *undo;
-	assert(undo_new(NULL) == NULL);
-	assert((undo = undo_new("undo")) != NULL);
+	assert((undo = undo_new()) != NULL);
 	assert(undo_destroy(undo) == UNDO_NOERROR);
 	
 	return 0;
@@ -325,14 +324,14 @@ int main() {
 int main() {
 	UNDO *a, *b, *c;
 
-	a = undo_new("A");
+	a = undo_new();
 	assert(a != NULL);
-	b = undo_new("B");
+	b = undo_new();
 	assert(b != NULL);
-	c = undo_new("C");
+	c = undo_new();
 	assert(c != NULL);
 	assert(undo_destroy(b) == UNDO_NOERROR);
-	b = undo_new("B");
+	b = undo_new();
 	assert(undo_destroy(b) == UNDO_NOERROR);
 	assert(undo_destroy(c) == UNDO_NOERROR);
 	assert(undo_destroy(a) == UNDO_NOERROR);
@@ -349,7 +348,7 @@ int main() {
 	UNDO *undo;
 	unsigned char *a, *b;
 
-	assert((undo = undo_new("undo")) != NULL);
+	assert((undo = undo_new()) != NULL);
 
 	a = undo_malloc(undo, 42);
 	assert(a != NULL);
@@ -384,7 +383,7 @@ int main() {
 	UNDO *undo;
 	unsigned char *a;
 
-	assert((undo = undo_new("undo")) != NULL);
+	assert((undo = undo_new()) != NULL);
 	assert(undo_set_memory_limit(undo, 1024 * 1024) == UNDO_NOERROR);
 
 	a = undo_malloc(undo, 42);

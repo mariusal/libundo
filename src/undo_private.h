@@ -25,8 +25,6 @@
 #include "undo_history.h"
 
 struct _UNDO {
-	char *name;
-
 	UNDO_MEMORY *memory;
 	UNDO_HISTORY *history;
         

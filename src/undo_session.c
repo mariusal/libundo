@@ -23,22 +23,12 @@
 #include "undo_private.h"
 #include "undo_memory.h"
 
-UNDO *undo_new(const char *session_name) {
+UNDO *undo_new(void) {
 	UNDO *undo = NULL;
-
-	if(session_name == NULL)
-		return NULL;
 
 	undo = NEW(UNDO);
 	if(undo == NULL)
 		return NULL;
-
-	undo->name = (char *)malloc(strlen(session_name) + 1);
-	if(undo->name == NULL) {
-		undo_destroy(undo);
-		return NULL;
-	}
-	strcpy(undo->name, session_name);
 
 	undo->memory = undo_memory_new();
 	if(undo->memory == NULL) {
@@ -58,9 +48,6 @@ UNDO *undo_new(const char *session_name) {
 int undo_destroy(UNDO *undo) {
 	if(undo == NULL)
 		UNDO_ERROR(undo, UNDO_NOSESSION);
-
-	if(undo->name)
-		free(undo->name);
 
 	if(undo->memory)
 		undo_memory_destroy(undo->memory);

@@ -20,6 +20,8 @@
 #ifndef __undo_error_h
 #define __undo_error_h
 
+#include "undo.h"
+
 #define NEW(type) ((type *)calloc(1, sizeof(type)))
 
 #define UNDO_SUCCESS               return UNDO_NOERROR;

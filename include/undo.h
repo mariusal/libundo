@@ -25,7 +25,7 @@
 typedef struct _UNDO UNDO;
 
 /*  Undo session management  */
-UNDO *undo_new(const char *session_name);
+UNDO *undo_new(void);
 int undo_destroy(UNDO *undo);
 
 /*  Undo limits  */
