@@ -17,13 +17,8 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include <stdlib.h>
-#include <string.h>
 
-#include "undo.h"
-#include "undo_history.h"
-#include "undo_memory_stream.h"
-#include "undo_error.h"
+#include "undoP.h"
 
 static void undo_history_stream_destroy(UNDO_MEMORY_STREAM *stream);
 static size_t undo_history_stream_read(UNDO_MEMORY_STREAM *stream, 

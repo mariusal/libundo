@@ -17,11 +17,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include <stdlib.h>
-
-#include "undo.h"
-#include "undo_private.h"
-#include "undo_memory.h"
+#include "undoP.h"
 
 UNDO *undo_new(void) {
 	UNDO *undo = NULL;

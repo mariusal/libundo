@@ -21,9 +21,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
-#include "undo.h"
-#include "undo_memory.h"
-#include "undo_error.h"
+#include "undoP.h"
 
 #define BLOCK_FLAG_LARGE	0x01
 

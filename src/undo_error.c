@@ -17,9 +17,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include "undo.h"
-#include "undo_private.h"
-#include "undo_error.h"
+#include "undoP.h"
 
 void undo_set_error(UNDO *undo, int err) {
 	if (undo) {

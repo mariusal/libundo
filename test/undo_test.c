@@ -1,5 +1,3 @@
-#include "undo_memory_stream.h"
-#include "undo_error.h"
 #include "undo_test.h"
 
 typedef struct _TEST_STREAM TEST_STREAM;

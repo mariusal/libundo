@@ -1,7 +1,5 @@
 ~~ STREAM: *../src/undo_error.o *../src/undo_memory_stream.o *undo_test.o
 
-#include <assert.h>
-#include "undo_memory_stream.h"
 #include "undo_test.h"
 
 int main() {
@@ -40,10 +38,7 @@ int main() {
 
 ~~ MEMORY: *../src/undo_memory.o STREAM
 
-#include <assert.h>
-#include <unistd.h>
-#include "undo.h"
-#include "undo_memory.h"
+#include "undo_test.h"
 
 int main() {
 	UNDO_MEMORY *arena;
@@ -91,10 +86,7 @@ int main() {
 
 ~~
 
-#include <assert.h>
-#include <unistd.h>
-#include "undo.h"
-#include "undo_memory.h"
+#include "undo_test.h"
 
 int main() {
 	UNDO_MEMORY *arena;
@@ -154,13 +146,7 @@ int main() {
 
 ~~
 
-#include <assert.h>
-#include <unistd.h>
-
-#include "undo.h"
 #include "undo_test.h"
-#include "undo_memory.h"
-#include "undo_memory_stream.h"
 
 int main() {
 	UNDO_MEMORY *arena;
@@ -216,11 +202,6 @@ int main() {
 
 ~~ HISTORY: *../src/undo_history.o STREAM
 
-#include <assert.h>
-
-#include "undo.h"
-#include "undo_history.h"
-#include "undo_memory_stream.h"
 #include "undo_test.h"
 
 int main() {
@@ -271,11 +252,6 @@ int main() {
 
 ~~
 
-#include <assert.h>
-
-#include "undo.h"
-#include "undo_history.h"
-#include "undo_memory_stream.h"
 #include "undo_test.h"
 
 int main() {
@@ -305,8 +281,7 @@ int main() {
 
 ~~ UNDO_API: *../src/undo_session.o MEMORY HISTORY
 
-#include <assert.h>
-#include "undo.h"
+#include "undo_test.h"
 
 int main() {
 	UNDO *undo;
@@ -318,8 +293,7 @@ int main() {
 
 ~~
 
-#include <assert.h>
-#include "undo.h"
+#include "undo_test.h"
 
 int main() {
 	UNDO *a, *b, *c;
@@ -341,8 +315,7 @@ int main() {
 
 ~~
 
-#include <assert.h>
-#include "undo.h"
+#include "undo_test.h"
 
 int main() {
 	UNDO *undo;
@@ -376,8 +349,7 @@ int main() {
 
 ~~
 
-#include <assert.h>
-#include "undo.h"
+#include "undo_test.h"
 
 int main() {
 	UNDO *undo;
@@ -440,8 +412,7 @@ int main() {
 
 ~~ UNDO_API_ERROR: UNDO_API
 
-#include <assert.h>
-#include "undo.h"
+#include "undo_test.h"
 
 int main() {
 	assert(undo_malloc(NULL, 42) == NULL);
