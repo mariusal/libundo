@@ -4,7 +4,7 @@ export PATH
 
 scripts/CVSMake
 
-make changelog
+cvs2cl.pl
 
 CDIR=`pwd`
 CDIR_BNAME=`basename $CDIR`
