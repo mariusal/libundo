@@ -23,189 +23,179 @@
 #include "undo_private.h"
 #include "undo_memory.h"
 
-static UNDO *undo_session = NULL;
+UNDO *undo_new(const char *session_name) {
+	UNDO *undo = NULL;
 
-int undo_new(char *session_name) {
 	if(session_name == NULL)
-		UNDO_ERROR(UNDO_BADPARAM);
+		UNDO_ERROR_NULL(UNDO_BADPARAM);
 
-	undo_session = NEW(UNDO);
-	if(undo_session == NULL)
-		UNDO_ERROR(UNDO_NOMEM);
+	undo = NEW(UNDO);
+	if(undo == NULL)
+		UNDO_ERROR_NULL(UNDO_NOMEM);
 
-	undo_session->name = (char *)malloc(strlen(session_name) + 1);
-	if(undo_session->name == NULL) {
-		undo_destroy();
-		UNDO_ERROR(UNDO_NOMEM);
+	undo->name = (char *)malloc(strlen(session_name) + 1);
+	if(undo->name == NULL) {
+		undo_destroy(undo);
+		UNDO_ERROR_NULL(UNDO_NOMEM);
 	}
-	strcpy(undo_session->name, session_name);
+	strcpy(undo->name, session_name);
 
-	undo_session->memory = undo_memory_new();
-	if(undo_session->memory == NULL) {
-		undo_destroy();
-		UNDO_ERROR(UNDO_NOMEM);
-	}
-
-	undo_session->history = undo_history_new();
-	if(undo_session->history == NULL) {
-		undo_destroy();
-		UNDO_ERROR(UNDO_NOMEM);
+	undo->memory = undo_memory_new();
+	if(undo->memory == NULL) {
+		undo_destroy(undo);
+		UNDO_ERROR_NULL(UNDO_NOMEM);
 	}
 
-	UNDO_SUCCESS;
+	undo->history = undo_history_new();
+	if(undo->history == NULL) {
+		undo_destroy(undo);
+		UNDO_ERROR_NULL(UNDO_NOMEM);
+	}
+
+	return undo;
 }
 
-int undo_destroy(void) {
-	if(undo_session == NULL)
+int undo_destroy(UNDO *undo) {
+	if(undo == NULL)
 		UNDO_ERROR(UNDO_NOSESSION);
 
-	if(undo_session->name)
-		free(undo_session->name);
+	if(undo->name)
+		free(undo->name);
 
-	if(undo_session->memory)
-		undo_memory_destroy(undo_session->memory);
+	if(undo->memory)
+		undo_memory_destroy(undo->memory);
 	
-	if(undo_session->history)
-		undo_history_destroy(undo_session->history);
+	if(undo->history)
+		undo_history_destroy(undo->history);
 
-	undo_session = NULL;
-
-	UNDO_SUCCESS;
-}
-
-UNDO *undo_get_session(void) {
-	return undo_session;
-}
-
-int undo_set_session(UNDO *undo) {
-	undo_session = undo;
+	free(undo);
 
 	UNDO_SUCCESS;
 }
 
-int undo_set_memory_limit(size_t max_memory) {
-	if(undo_session == NULL)
+int undo_set_memory_limit(UNDO *undo, size_t max_memory) {
+	if(undo == NULL)
 		UNDO_ERROR(UNDO_NOSESSION);
 
-	undo_history_set_memory_limit(undo_session->history, max_memory);
+	undo_history_set_memory_limit(undo->history, max_memory);
 
 	UNDO_SUCCESS;
 }
 
-int undo_set_history_logical(int onoff) {
-	if(undo_session == NULL)
+int undo_set_history_logical(UNDO *undo, int onoff) {
+	if(undo == NULL)
 		UNDO_ERROR(UNDO_NOSESSION);
 
-	undo_history_set_logical(undo_session->history, onoff);
+	undo_history_set_logical(undo->history, onoff);
 
 	UNDO_SUCCESS;
 }
 
-unsigned undo_get_undo_count(void) {
-	if(undo_session == NULL)
+unsigned undo_get_undo_count(const UNDO *undo) {
+	if(undo == NULL)
 		return 0;
 
-	return undo_history_undo_count(undo_session->history);
+	return undo_history_undo_count(undo->history);
 }
 
-unsigned undo_get_redo_count(void) {
-	if(undo_session == NULL)
+unsigned undo_get_redo_count(const UNDO *undo) {
+	if(undo == NULL)
 		return 0;
 
-	return undo_history_redo_count(undo_session->history);
+	return undo_history_redo_count(undo->history);
 }
 
-int undo_undo(void) {
+int undo_undo(UNDO *undo) {
 	UNDO_MEMORY_STREAM *stream;
 	int ret;
 
-	if(undo_session == NULL)
+	if(undo == NULL)
 		UNDO_ERROR(UNDO_NOSESSION);
 
-	if(undo_history_undo_count(undo_session->history) == 0)
+	if(undo_history_undo_count(undo->history) == 0)
 		UNDO_ERROR(UNDO_NODO);
 
-	stream = undo_history_undo(undo_session->history);
+	stream = undo_history_undo(undo->history);
 	if(stream == NULL)
 		UNDO_ERROR(UNDO_NOMEM);
-	ret = undo_memory_set(undo_session->memory, stream);
+	ret = undo_memory_set(undo->memory, stream);
 	stream->destroy(stream);
 
 	return ret;
 }
 
-int undo_redo(void) {
+int undo_redo(UNDO *undo) {
 	UNDO_MEMORY_STREAM *stream;
 	int ret;
 
-	if(undo_session == NULL)
+	if(undo == NULL)
 		UNDO_ERROR(UNDO_NOSESSION);
 	
-	if(undo_history_redo_count(undo_session->history) == 0)
+	if(undo_history_redo_count(undo->history) == 0)
 		UNDO_ERROR(UNDO_NODO);
 
-	stream = undo_history_redo(undo_session->history);
+	stream = undo_history_redo(undo->history);
 	if(stream == NULL)
 		UNDO_ERROR(UNDO_NOMEM);
-	ret = undo_memory_set(undo_session->memory, stream);
+	ret = undo_memory_set(undo->memory, stream);
 	stream->destroy(stream);
 
 	return ret;
 }
 
-int undo_snapshot(void) {
+int undo_snapshot(UNDO *undo) {
 	UNDO_MEMORY_STREAM *stream;
 	int ret;
 
-	if(undo_session == NULL)
+	if(undo == NULL)
 		UNDO_ERROR(UNDO_NOSESSION);
 
-	stream = undo_memory_stream(undo_session->memory);
+	stream = undo_memory_stream(undo->memory);
 	if(stream == NULL)
 		UNDO_ERROR(UNDO_NOMEM);
-	ret = undo_history_record(undo_session->history, stream);
+	ret = undo_history_record(undo->history, stream);
 	stream->destroy(stream);
 
 	return ret;
 }
 
-void *undo_malloc(size_t size) {
-	if(undo_session == NULL)
+void *undo_malloc(UNDO *undo, size_t size) {
+	if(undo == NULL)
 		UNDO_ERROR_NULL(UNDO_NOSESSION);
 
-	return undo_memory_alloc(undo_session->memory, size);
+	return undo_memory_alloc(undo->memory, size);
 }
 
-void *undo_realloc(void *mem, size_t size) {
+void *undo_realloc(UNDO *undo, void *mem, size_t size) {
 	size_t min_size;
 	void *new_mem;
 
-	if(undo_session == NULL)
+	if(undo == NULL)
 		UNDO_ERROR_NULL(UNDO_NOSESSION);
 
 	if(mem == NULL)
-		return undo_memory_alloc(undo_session->memory, size);
+		return undo_memory_alloc(undo->memory, size);
 
-	min_size = undo_memory_size(undo_session->memory, mem);
+	min_size = undo_memory_size(undo->memory, mem);
 	if(size < min_size)
 		min_size = size;
 
 	if(size == min_size)
 		return mem;
 
-	new_mem = undo_memory_alloc(undo_session->memory, size);
+	new_mem = undo_memory_alloc(undo->memory, size);
 	if(new_mem == NULL)
 		UNDO_ERROR_NULL(UNDO_NOMEM);
 
 	memcpy(new_mem, mem, min_size);
-	undo_memory_free(undo_session->memory, mem);
+	undo_memory_free(undo->memory, mem);
 	
 	return new_mem; 
 }
 
-void undo_free(void *mem) {
-	if(undo_session == NULL)
+void undo_free(UNDO *undo, void *mem) {
+	if(undo == NULL)
 		return;
 
-	undo_memory_free(undo_session->memory, mem);
+	undo_memory_free(undo->memory, mem);
 }

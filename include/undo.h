@@ -25,32 +25,29 @@
 typedef struct _UNDO UNDO;
 
 /*  Undo session management  */
-int undo_new(char *session_name);
-int undo_destroy(void);
-
-UNDO *undo_get_session(void);
-int undo_set_session(UNDO *undo);
+UNDO *undo_new(const char *session_name);
+int undo_destroy(UNDO *undo);
 
 /*  Undo limits  */
-int undo_set_memory_limit(size_t max_memory);
+int undo_set_memory_limit(UNDO *undo, size_t max_memory);
 
 /*  History type  */
-int undo_set_history_logical(int onoff);
+int undo_set_history_logical(UNDO *undo, int onoff);
 
 /*  Memory management for undo-watched memory  */
-void *undo_malloc(size_t size);
-void *undo_realloc(void *mem, size_t size);
-void undo_free(void *mem);
+void *undo_malloc(UNDO *undo, size_t size);
+void *undo_realloc(UNDO *undo, void *mem, size_t size);
+void undo_free(UNDO *undo, void *mem);
 
 /*  Recording functions  */
-int undo_snapshot(void);
+int undo_snapshot(UNDO *undo);
 
 /*  Undo and redo  */
-int undo_undo(void);
-int undo_redo(void);
+int undo_undo(UNDO *undo);
+int undo_redo(UNDO *undo);
 
-unsigned undo_get_undo_count(void);
-unsigned undo_get_redo_count(void);
+unsigned undo_get_undo_count(const UNDO *undo);
+unsigned undo_get_redo_count(const UNDO *undo);
 
 /*  Error codes  */
 #define UNDO_NOERROR        0   /* No error */

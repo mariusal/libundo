@@ -309,10 +309,10 @@ int main() {
 #include "undo.h"
 
 int main() {
-	assert(undo_new(NULL) == UNDO_BADPARAM);
-	assert(undo_new("undo") == UNDO_NOERROR);
-	assert(undo_destroy() == UNDO_NOERROR);
-	assert(undo_destroy() == UNDO_NOSESSION);
+	UNDO *undo;
+	assert(undo_new(NULL) == NULL);
+	assert((undo = undo_new("undo")) != NULL);
+	assert(undo_destroy(undo) == UNDO_NOERROR);
 	
 	return 0;
 }
@@ -325,25 +325,17 @@ int main() {
 int main() {
 	UNDO *a, *b, *c;
 
-	assert(undo_new("A") == UNDO_NOERROR);
-	a = undo_get_session();
+	a = undo_new("A");
 	assert(a != NULL);
-	assert(undo_new("B") == UNDO_NOERROR);
-	b = undo_get_session();
+	b = undo_new("B");
 	assert(b != NULL);
-	assert(undo_set_session(a) == UNDO_NOERROR);
-	assert(undo_get_session() == a);
-	assert(undo_new("C") == UNDO_NOERROR);
-	c = undo_get_session();
+	c = undo_new("C");
 	assert(c != NULL);
-	assert(undo_set_session(b) == UNDO_NOERROR);
-	assert(undo_destroy() == UNDO_NOERROR);
-	assert(undo_new("B") == UNDO_NOERROR);
-	assert(undo_destroy() == UNDO_NOERROR);
-	assert(undo_set_session(c) == UNDO_NOERROR);
-	assert(undo_destroy() == UNDO_NOERROR);
-	assert(undo_set_session(a) == UNDO_NOERROR);
-	assert(undo_destroy() == UNDO_NOERROR);
+	assert(undo_destroy(b) == UNDO_NOERROR);
+	b = undo_new("B");
+	assert(undo_destroy(b) == UNDO_NOERROR);
+	assert(undo_destroy(c) == UNDO_NOERROR);
+	assert(undo_destroy(a) == UNDO_NOERROR);
 
 	return 0;
 }
@@ -354,19 +346,20 @@ int main() {
 #include "undo.h"
 
 int main() {
+	UNDO *undo;
 	unsigned char *a, *b;
 
-	assert(undo_new("undo") == UNDO_NOERROR);
+	assert((undo = undo_new("undo")) != NULL);
 
-	a = undo_malloc(42);
+	a = undo_malloc(undo, 42);
 	assert(a != NULL);
 	memset(a, 0xff, 42);
 	
-	b = undo_malloc(16384);
+	b = undo_malloc(undo, 16384);
 	assert(b != NULL);
 	memset(b, 0xee, 16384);
 
-	a = undo_realloc(a, 16384); 
+	a = undo_realloc(undo, a, 16384); 
 	assert(a != NULL);
 
 	assert(a[13] == 0xff);
@@ -374,10 +367,10 @@ int main() {
 
 	memset(a, 0xff, 16384);
 
-	undo_free(a);
-	undo_free(b);
+	undo_free(undo, a);
+	undo_free(undo, b);
 
-	assert(undo_destroy() == UNDO_NOERROR);
+	assert(undo_destroy(undo) == UNDO_NOERROR);
 
 	return 0;	
 }
@@ -388,59 +381,60 @@ int main() {
 #include "undo.h"
 
 int main() {
+	UNDO *undo;
 	unsigned char *a;
 
-	assert(undo_new("undo") == UNDO_NOERROR);
-	assert(undo_set_memory_limit(1024 * 1024) == UNDO_NOERROR);
+	assert((undo = undo_new("undo")) != NULL);
+	assert(undo_set_memory_limit(undo, 1024 * 1024) == UNDO_NOERROR);
 
-	a = undo_malloc(42);
+	a = undo_malloc(undo, 42);
 	assert(a != NULL);
 	memset(a, 0x42, 42);
-	assert(undo_get_undo_count() == 0);
-	assert(undo_get_redo_count() == 0);
-	assert(undo_snapshot() == UNDO_NOERROR);
-	assert(undo_get_undo_count() == 0);
-	assert(undo_get_redo_count() == 0);
+	assert(undo_get_undo_count(undo) == 0);
+	assert(undo_get_redo_count(undo) == 0);
+	assert(undo_snapshot(undo) == UNDO_NOERROR);
+	assert(undo_get_undo_count(undo) == 0);
+	assert(undo_get_redo_count(undo) == 0);
 	assert(a[1] == 0x42);
 	memset(a, 0x24, 42);
-	assert(undo_snapshot() == UNDO_NOERROR);
-	assert(undo_get_undo_count() == 1);
-	assert(undo_get_redo_count() == 0);
+	assert(undo_snapshot(undo) == UNDO_NOERROR);
+	assert(undo_get_undo_count(undo) == 1);
+	assert(undo_get_redo_count(undo) == 0);
 	assert(a[2] == 0x24);
 	memset(a, 0x14, 42);
-	assert(undo_snapshot() == UNDO_NOERROR);
-	assert(undo_get_undo_count() == 2);
-	assert(undo_get_redo_count() == 0);
+	assert(undo_snapshot(undo) == UNDO_NOERROR);
+	assert(undo_get_undo_count(undo) == 2);
+	assert(undo_get_redo_count(undo) == 0);
 
-	assert(undo_undo() == UNDO_NOERROR);
-	assert(undo_get_undo_count() == 1);
-	assert(undo_get_redo_count() == 1);
+	assert(undo_undo(undo) == UNDO_NOERROR);
+	assert(undo_get_undo_count(undo) == 1);
+	assert(undo_get_redo_count(undo) == 1);
 	assert(a[3] == 0x24);
-	assert(undo_undo() == UNDO_NOERROR);
-	assert(undo_get_undo_count() == 0);
-	assert(undo_get_redo_count() == 2);
+	assert(undo_undo(undo) == UNDO_NOERROR);
+	assert(undo_get_undo_count(undo) == 0);
+	assert(undo_get_redo_count(undo) == 2);
 	assert(a[4] == 0x42);
-	assert(undo_undo() != UNDO_NOERROR);
-	assert(undo_redo() == UNDO_NOERROR);
+	assert(undo_undo(undo) != UNDO_NOERROR);
+	assert(undo_redo(undo) == UNDO_NOERROR);
 	assert(a[5] == 0x24);
-	assert(undo_redo() == UNDO_NOERROR);
+	assert(undo_redo(undo) == UNDO_NOERROR);
 	assert(a[6] == 0x14);
-	assert(undo_redo() != UNDO_NOERROR);
+	assert(undo_redo(undo) != UNDO_NOERROR);
 
-	assert(undo_undo() == UNDO_NOERROR);
+	assert(undo_undo(undo) == UNDO_NOERROR);
 	assert(a[3] == 0x24);
 	assert(a[2] == 0x24);
 	memset(a, 0x04, 42);
-	assert(undo_snapshot() == UNDO_NOERROR);
-	assert(undo_undo() == UNDO_NOERROR);
+	assert(undo_snapshot(undo) == UNDO_NOERROR);
+	assert(undo_undo(undo) == UNDO_NOERROR);
 	assert(a[3] == 0x14);
-	assert(undo_undo() == UNDO_NOERROR);
+	assert(undo_undo(undo) == UNDO_NOERROR);
 	assert(a[3] == 0x24);
-	assert(undo_undo() == UNDO_NOERROR);
+	assert(undo_undo(undo) == UNDO_NOERROR);
 	assert(a[3] == 0x42);
-	assert(undo_undo() != UNDO_NOERROR);
+	assert(undo_undo(undo) != UNDO_NOERROR);
 
-	assert(undo_destroy() == UNDO_NOERROR);
+	assert(undo_destroy(undo) == UNDO_NOERROR);
 
 	return 0;
 }
@@ -451,7 +445,7 @@ int main() {
 #include "undo.h"
 
 int main() {
-	assert(undo_malloc(42) == NULL);
+	assert(undo_malloc(NULL, 42) == NULL);
 	assert(undo_get_errcode() == UNDO_NOSESSION);
 	assert(undo_get_errcode() == UNDO_NOERROR);
 	assert(undo_strerror(-1) == NULL);
