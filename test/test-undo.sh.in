@@ -1,0 +1,12 @@
+#!/bin/sh
+
+PERL=@PERL@
+SRCDIR=@srcdir@
+TOPDIR=@top_srcdir@
+
+if test "$PERL" != NONE; then
+  ${PERL} ${SRCDIR}/test.pl ${SRCDIR}/undo.test ${TOPDIR}
+else
+  echo !! Perl is required to test libundo !!
+  exit 1
+fi

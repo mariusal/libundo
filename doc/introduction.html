@@ -1,0 +1,290 @@
+<HTML>
+<HEAD><TITLE>Libundo: Introduction</TITLE></HEAD>
+<BODY BGCOLOR="#ffffff" FGCOLOR="#000000">
+<P>
+<IMG SRC="libundo.png" ALT="Libundo">
+
+<P>
+<H2>Introduction</H2>
+
+<P>
+Multilevel undo is unquestionably a very valuable tool which allows
+users to fearlessly explore changes to their data without worry about
+the details of not being able to recover from mistakes.  It is no
+wonder that many of today's users expect their applications to
+seamlessly support multilevel undo/redo.  
+
+<P>
+Unfortunately for users, many application developers implement
+undo/redo poorly or not at all.  When it is implemented, it is often
+done so in an ad hoc fasion, with each possible program operation
+having associated code to perform undo and redo actions.  This is
+additional code which must be written, debugged and supported.  Some
+application writers simplify the problem of managing undo information
+by only implementing single level undo, or by not implementing any
+sort of undo!  Because of the complexity of properly managing
+undo/redo, the users suffer.
+
+<P>
+Libundo is a simple, easy-to-use library which manages recording and
+playback of undo/redo information for application developers.  It is
+designed to be simple to plug in to existing applications and require
+only a minimal amount of support code be written to support
+multi-level undo/redo.  Libundo handles all the details of determining
+what has changed after an undoable action is performed, recording that
+information and saving it for use when an undo is performed.  Libundo
+makes it easy for application writers to give end users what they
+want.
+
+<P>
+Libundo is available under the GNU GPL and is not tied to any GUI
+libraries or application frameworks.  Libundo has a C&nbsp;language
+interface.  Libundo does require the ability to do Unix-style
+memory&nbsp;mapping.
+
+
+<P>
+<H2>Libundo Basics</H2>
+
+<P>
+Libundo works by managing an alternate memory allocation heap.
+Through the functions <TT>undo_malloc()</TT> and <TT>undo_free()</TT>
+you are able to allocate and free memory, just like the standard
+functions <TT>malloc()</TT> and <TT>free()</TT>.  The difference is
+that through the <TT>undo_snapshot()</TT> function call, the current
+state of the memory heap can be recorded and saved for later
+restoration.
+
+<P>
+It is expected that you will use <TT>undo_malloc()</TT> to allocate
+all memory used to store state of the document your application
+operates on.  Immediately after you initialize a new document, you
+will call <TT>undo_snapshot()</TT> to record the original document
+state.  Similarly, as the last step of each operation which modifies
+your document data, you will call <TT>undo_snapshot()</TT> to record the
+changes you have made while performing that action.
+
+<P>
+At a later time, when the application user requests that the last
+action be undone, you will call the function <TT>undo_undo()</TT> and
+Libundo will use the recorded snapshots to undo the one action.  When
+the user requests a redo, you will call <TT>undo_redo()</TT>, and one
+undone action will be redone.  Note that when you call
+<TT>undo_undo()</TT> or <TT>undo_redo()</TT>, undo memory will be
+allocated and freed as recorded by your previous snapshots.
+
+
+<P>
+<H2>Session Management</H2>
+
+<P>
+Before you can allocate any undoable memory, you must first create an
+undo session and set a memory limit.  The <TT>undo_new()</TT> function
+allows you to create an undo session and <TT>undo_destroy()</TT> will
+destroy the active undo session.
+
+<P>
+<BLOCKQUOTE>
+	<TT>int undo_new(char *session_name);</TT><BR>
+	<TT>int undo_destroy(void);</TT><BR>
+</BLOCKQUOTE>
+
+<P>
+<TT>undo_new()</TT> will create a new session with the given
+<TT>session_name</TT>.  <TT>session_name</TT> should be a
+non-<TT>NULL</TT> character string describing the document.  The
+filename the document was read from might be appropriate.  The
+<TT>session_name</TT> isn't currently used by Libundo, but future
+versions may include crash-recovery features.  The
+<TT>session_name</TT> would be used to identify documents from
+previously crashed sessions.
+
+<P>
+There also exist functions to manage which undo session is currently
+active.  <TT>undo_get_session()</TT> will return the current session while
+<TT>undo_set_session()</TT> will set the currently active session.
+
+<P>
+<BLOCKQUOTE>
+	<TT>UNDO *undo_get_session(void);</TT><BR>
+	<TT>int undo_set_session(UNDO *undo);</TT><BR>
+</BLOCKQUOTE>
+
+<P>
+If your application has multiple documents open, you will likely have
+a distinct undo session for each document.  Before you call any other
+undo related functions, you will want to first call
+<TT>undo_set_session()</TT> so that you are sure that the proper
+session is activated.
+
+<P>
+Finally, each undo session has an associated memory limit.  Use
+<TT>undo_set_memory_limit()</TT> to set this limit.
+
+<P>
+<BLOCKQUOTE>
+	<TT>int undo_set_memory_limit(size_t max_memory);</TT><BR>
+</BLOCKQUOTE>
+
+<P>
+This limit is used to determine how many recorded snapshots are kept
+by the undo session.  Libundo will discard old snapshots as necessary
+to keep its snapshot history under the specified limit.  You must specify
+a memory limit before you make any calls to <TT>undo_snapshot()</TT>.
+
+
+<P>
+<H2>Memory Management</H2>
+
+<P>
+The interface and operation of <TT>undo_malloc()</TT>,
+<TT>undo_realloc()</TT> and <TT>undo_free()</TT> should be familiar to
+any C&nbsp;language programmer.  They are designed to be drop-in
+replacements for <TT>malloc()</TT>, <TT>realloc()</TT> and
+<TT>free()</TT> when operating on undoable data.
+
+<P>
+<BLOCKQUOTE>
+	<TT>void *undo_malloc(size_t size);</TT><BR>
+	<TT>void *undo_realloc(void *mem, size_t size);</TT><BR>
+	<TT>void undo_free(void *mem);</TT><BR>
+</BLOCKQUOTE>
+
+<P>
+There shouldn't be any surprises here.  Each of these functions
+behaves the same as its C&nbsp;library counterpart, except it uses the
+memory heap of the currently active undo&nbsp;session.
+
+<P>
+The only memory management function without a C&nbsp;library
+counterpart is <TT>undo_snapshot()</TT>.
+
+<P>
+<BLOCKQUOTE>
+	<TT>int undo_snapshot(void);</TT><BR>
+</BLOCKQUOTE>
+
+<P>
+<TT>undo_snapshot()</TT> simply records state of the current undo
+session's memory heap, including information about what blocks are
+currently allocated.  It will honor the memory limit set by
+<TT>undo_set_memory_limit()</TT>.  This recorded snapshot can be
+played back later by <TT>undo_undo()</TT>.
+
+
+<P>
+<H2>Undo/Redo</H2>
+
+<P>
+After more than one snapshot has been recorded by
+<TT>undo_snapshot()</TT>, <TT>undo_undo()</TT> and
+<TT>undo_redo()</TT> can be used.
+
+<P>
+<BLOCKQUOTE>
+	<TT>int undo_undo(void);</TT><BR>
+	<TT>int undo_redo(void);</TT><BR>
+</BLOCKQUOTE>
+
+<P>
+Both functions simply restore the state of the current session's
+memory heap to that which is represented by the appropriate snapshot.
+Memory allocated by <TT>undo_malloc()</TT> may be freed or reallocated
+as a result of calling <TT>undo_undo()</TT> or <TT>undo_redo()</TT>.
+Be careful that you don't have references to undoable memory which
+might be freed in non-undoable memory.
+
+<P>
+The functions <TT>undo_get_undo_count()</TT> and
+<TT>undo_get_redo_count()</TT> are also provided.
+
+<P>
+<BLOCKQUOTE>
+	<TT>unsigned undo_get_undo_count(void);</TT><BR>
+	<TT>unsigned undo_get_redo_count(void);</TT><BR>
+</BLOCKQUOTE>
+
+<P>
+These functions simply return the numbers of times your application
+can expect to undo or redo undoable actions from the current point in
+the undo stack of the active session.  These can be useful to set
+undo/redo menu items and buttons in your GUI to insensitive when there
+are no undos or redos possible.
+
+
+<P>
+<H2>Error Recovery</H2>
+
+<P>
+The above Libundo functions which return the type <TT>int</TT> all
+return standard Libundo error codes.
+
+<P>
+<PRE>
+	<TT>#define UNDO_NOERROR        0   /* No error */</TT>
+	<TT>#define UNDO_BADPARAM       1   /* Bad parameter passed to function */</TT>
+	<TT>#define UNDO_NOMEM          2   /* Not enough memory */</TT>
+	<TT>#define UNDO_NOSESSION      3   /* No undo session */</TT>
+	<TT>#define UNDO_NODO           4   /* Nothing to undo/redo */</TT>
+	<TT>#define UNDO_NOLIMIT        5   /* No memory limit specified */</TT>
+</PRE>
+
+<P>
+The Libundo functions which return pointers will return <TT>NULL</TT>
+when Libundo experiences an error.  In the case of either type of
+function, <TT>undo_get_errcode()</TT> can be used to retrieve the
+error code for the last error.
+
+<BLOCKQUOTE>
+	<TT>int undo_get_errcode(void);</TT><BR>
+</BLOCKQUOTE>
+
+<P>
+Note that calling <TT>undo_get_errcode()</TT> will reset the state of
+Libundo such that <TT>undo_get_errcode()</TT> will return
+<TT>UNDO_NOERROR</TT> the next time it is called if there hasn't been
+another error.
+
+<P>
+As a convenience to you, Libundo provides a function for converting
+from a numeric undo error code to an English string describing the error.
+
+<BLOCKQUOTE>
+	<TT>char *undo_strerror(int errcode);</TT><BR>
+</BLOCKQUOTE>
+
+<P>
+<TT>undo_strerror()</TT> will return a null terminated string with a 
+newline at the end suitable for printing in the case of an error.
+
+
+<P>
+<H2>The Future of Libundo</H2>
+
+<P>
+Future versions of Libundo may include application crash recovery
+though the saving of snapshots to disk.  Hooks may be provided so that
+applications can register callbacks to be executed at undo and redo
+time to perform actions which aren't easily mapped into the
+<TT>undo_malloc()</TT> paradigm.  Similarly, future versions of
+Libundo may be able to watch regions of memory for changes to ease
+integration with applications which use <TT>mmap()</TT> to map files
+into memory.  If you've got an opinion about which extensions to
+Libundo would be useful and which are unnecessary, I'd love to hear
+it.
+
+
+<P>
+<H2>About the Author</H2>
+
+<P>
+Matt Kimball (<A HREF="mailto:mkimball@xmission.com">mkimball@xmission.com</A>)
+is a geek who enjoys systems programming, computer graphics and user
+interface issues.  He currently lives in Palo Alto and is working at
+<A HREF="http://www.pdi.com/">Pacific Data Images</A> on PDI's next
+fully computer generated feature film, though Libundo has been created
+entirely on his own time and own equipment, and is unrelated to PDI's
+business.
+
+</BODY>
+</HTML>

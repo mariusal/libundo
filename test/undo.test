@@ -1,0 +1,462 @@
+~~ STREAM: *../src/undo_error.o *../src/undo_memory_stream.o *undo_test.o
+
+#include <assert.h>
+#include "undo_memory_stream.h"
+#include "undo_test.h"
+
+int main() {
+	char big[16384];
+	char little[16];
+	size_t ret, pos;	
+	UNDO_MEMORY_STREAM *stream;
+	
+	memset(big, 0x13, 16384);
+	memset(little, 0x14, 16);
+
+	pos = 0;
+	ret = undo_memory_stream_write(64, little, 8, 
+				       &pos, big, 16384);
+	assert(pos == 16384);
+	assert(ret == 8);
+
+	undo_memory_stream_write(65536, little, 8, 
+				 &pos, big, 16384);
+
+	pos = 80;
+	ret = undo_memory_stream_write(64, little, 16, 
+				 &pos, big, 16384);
+	assert(pos == 16384 + 80);
+	assert(ret == 0);
+
+	assert(little[7] == 0x13);
+	assert(little[8] == 0x14);
+
+	stream = undo_test_memory_stream(big, 16384);
+	assert(undo_memory_stream_length(stream) == 16384);
+	stream->destroy(stream);
+
+	return 0;
+}
+
+~~ MEMORY: *../src/undo_memory.o STREAM
+
+#include <assert.h>
+#include <unistd.h>
+#include "undo.h"
+#include "undo_memory.h"
+
+int main() {
+	UNDO_MEMORY *arena;
+	char *a, *b;
+	size_t large;
+
+	arena = undo_memory_new();
+	assert(arena != NULL);
+	assert(undo_memory_used(arena) == 0);
+
+	a = undo_memory_alloc(arena, 0);
+	assert(a != NULL);
+	assert(undo_memory_used(arena) == UNDO_MEMORY_OVERHEAD);
+	assert(undo_memory_pages_used(arena) == 1);
+	b = undo_memory_alloc(arena, 5);
+	assert(b != NULL);
+	memset(b, 0, 5);
+	assert(undo_memory_size(arena, b) == 8);
+	assert(undo_memory_used(arena) == UNDO_MEMORY_OVERHEAD * 2 + 8);
+	assert(undo_memory_pages_used(arena) == 1);
+	assert(undo_memory_free(arena, a) == UNDO_NOERROR);
+	assert(undo_memory_used(arena) == UNDO_MEMORY_OVERHEAD + 8);
+	assert(undo_memory_free(arena, b) == UNDO_NOERROR);
+	assert(undo_memory_used(arena) == 0);
+
+	large = getpagesize() * 4;
+	a = undo_memory_alloc(arena, large);
+	assert(a != NULL);
+	memset(a, 0, large);
+	assert(undo_memory_size(arena, a) == large);
+	assert(undo_memory_used(arena) == large);
+	assert(undo_memory_free(arena, a) == UNDO_NOERROR);
+	assert(undo_memory_used(arena) == 0);
+
+	large = getpagesize() - UNDO_MEMORY_OVERHEAD;
+	a = undo_memory_alloc(arena, large);
+	assert(a != NULL);
+	memset(a, 42, large);
+	assert(undo_memory_free(arena, a) == UNDO_NOERROR);
+
+	assert(undo_memory_destroy(arena) == UNDO_NOERROR);
+
+	return 0;
+}
+
+~~
+
+#include <assert.h>
+#include <unistd.h>
+#include "undo.h"
+#include "undo_memory.h"
+
+int main() {
+	UNDO_MEMORY *arena;
+	char *a, *b, *c;
+	char cmd[256];
+	int pid;
+
+	arena = undo_memory_new();
+	assert(arena != NULL);
+
+	pid = getpid();
+	sprintf(cmd, "cp /proc/%d/maps /tmp/undo.maps.%d", pid, pid);
+	system(cmd);
+
+	a = undo_memory_alloc(arena, 16);
+	assert(a != NULL);
+	b = undo_memory_alloc(arena, 16);
+	assert(b != NULL);
+	undo_memory_free(arena, a);
+	/*  This will make sure block integrity is preserved if we 
+	    reallocate a same size block  */
+	a = undo_memory_alloc(arena, 16);
+	assert(a != NULL);
+	c = undo_memory_alloc(arena, 16);
+	assert(c != NULL);
+	memset(c, 0xff, 16);
+
+	undo_memory_free(arena, a);
+	undo_memory_free(arena, c);
+
+	/*  This will make sure block integrity is preserved if we 
+	    reallocate a smaller size block  */
+	a = undo_memory_alloc(arena, 16 - UNDO_MEMORY_OVERHEAD);
+	assert(a != NULL);
+	c = undo_memory_alloc(arena, 16);
+	assert(c != NULL);
+	memset(c, 0xff, 16);
+
+	assert(undo_memory_destroy(arena) == UNDO_NOERROR);
+
+	sprintf(cmd, "cp /proc/%d/maps /tmp/undo.maps_final.%d", pid, pid);
+	system(cmd);
+
+	/*  This is a very non-portable way to check and see if all the 
+	    memory that was mapped in by undo_memory_alloc is now freed.  
+            It'll only work under Linux.
+
+	    Maybe there is a better way?  */
+	sprintf(cmd, "cmp /tmp/undo.maps.%d /tmp/undo.maps_final.%d", pid, pid);
+	assert(system(cmd) == 0);
+
+	sprintf(cmd, "rm -f /tmp/undo.maps.%d /tmp/undo.maps_final.%d", pid, pid);
+	system(cmd);
+
+	return 0;
+}
+
+~~
+
+#include <assert.h>
+#include <unistd.h>
+
+#include "undo.h"
+#include "undo_test.h"
+#include "undo_memory.h"
+#include "undo_memory_stream.h"
+
+int main() {
+	UNDO_MEMORY *arena;
+	UNDO_MEMORY_STREAM *stream;
+	char *a, *b;
+	int count, add_count;
+	char buff[4096];
+	int stream_count;
+	char *mem;
+
+	arena = undo_memory_new();
+	assert(arena != NULL);
+
+	a = undo_memory_alloc(arena, 16);
+	assert(a != NULL);
+	b = undo_memory_alloc(arena, getpagesize() * 3 / 2);
+	assert(b != NULL);
+	assert(undo_memory_pages_used(arena) == 3);
+
+	memset(a, 0x01, 16);
+	memset(b, 0x02, getpagesize() * 3 / 2);
+	
+	stream = undo_memory_stream(arena);
+	count = 0;
+	do {
+		add_count = stream->read(stream, count, buff, 4096);
+		count += add_count;
+	} while(add_count);
+	assert(count > 0);
+	stream_count = count;
+	stream->destroy(stream);
+
+	stream = undo_memory_stream(arena);
+	mem = (char *)malloc(stream_count);
+	count = stream->read(stream, 0, mem, stream_count);
+	assert(count == stream_count);
+	stream->destroy(stream);
+
+	mem[STREAM_SERIALIZED_BLOCK_HEADER_SIZE * 2 + getpagesize() + 1] = 0x04;
+
+	stream = undo_test_memory_stream(mem, stream_count);
+	assert(undo_memory_set(arena, stream) == UNDO_NOERROR);
+	stream->destroy(stream);
+	assert(a[0] == 0x01);
+	assert(a[1] == 0x01);
+	assert(b[0] == 0x02);
+	assert(b[1] == 0x04);   
+	
+	assert(undo_memory_destroy(arena) == UNDO_NOERROR);
+
+	return 0;
+}
+
+~~ HISTORY: *../src/undo_history.o STREAM
+
+#include <assert.h>
+
+#include "undo.h"
+#include "undo_history.h"
+#include "undo_memory_stream.h"
+#include "undo_test.h"
+
+int main() {
+	UNDO_HISTORY *history;
+	UNDO_MEMORY_STREAM *stream;
+	char orig[4096], copy[4096];
+	int at;
+
+	for(at = 0; at < 4096; at++) {
+		orig[at] = at;
+	}
+
+	history = undo_history_new();
+	assert(history != NULL);
+	undo_history_set_memory_limit(history, 1024 * 1024);
+
+	stream = undo_test_memory_stream(orig, 4096);
+	assert(undo_history_record(history, stream) == UNDO_NOERROR);
+	stream->destroy(stream);
+
+	for(at = 0; at < 4096; at++) {
+		orig[at] = 4096 - at;
+	}
+
+	stream = undo_test_memory_stream(orig, 4096);
+	assert(undo_history_record(history, stream) == UNDO_NOERROR);
+	stream->destroy(stream);
+
+	stream = undo_history_undo(history);
+	assert(stream != NULL);
+	stream->read(stream, 0, copy, 4096);
+	stream->destroy(stream);
+	assert(memcmp(orig, copy, 4096));
+
+	stream = undo_history_undo(history);
+	assert(stream == NULL);
+
+	stream = undo_history_redo(history);
+	assert(stream != NULL);
+	stream->read(stream, 0, copy, 4096);
+	stream->destroy(stream);
+	assert(!memcmp(orig, copy, 4096));
+
+	assert(undo_history_destroy(history) == UNDO_NOERROR);
+
+	return 0;
+}
+
+~~
+
+#include <assert.h>
+
+#include "undo.h"
+#include "undo_history.h"
+#include "undo_memory_stream.h"
+#include "undo_test.h"
+
+int main() {
+	UNDO_HISTORY *history;
+	UNDO_MEMORY_STREAM *stream;
+	char mem[4096];
+	int i;
+
+	memset(mem, 0x82, 4096);
+	
+	history = undo_history_new();
+	assert(history != NULL);
+
+	undo_history_set_memory_limit(history, 12000);
+
+	for(i = 0; i < 16384; i++) {
+		stream = undo_test_memory_stream(mem, 4096);
+		assert(undo_history_record(history, stream) == UNDO_NOERROR);
+		stream->destroy(stream);
+		assert(undo_history_memory_usage(history) <= 12000);
+	}
+
+	assert(undo_history_destroy(history) == UNDO_NOERROR);
+
+	return 0;
+}
+
+~~ UNDO_API: *../src/undo_session.o MEMORY HISTORY
+
+#include <assert.h>
+#include "undo.h"
+
+int main() {
+	assert(undo_new(NULL) == UNDO_BADPARAM);
+	assert(undo_new("undo") == UNDO_NOERROR);
+	assert(undo_destroy() == UNDO_NOERROR);
+	assert(undo_destroy() == UNDO_NOSESSION);
+	
+	return 0;
+}
+
+~~
+
+#include <assert.h>
+#include "undo.h"
+
+int main() {
+	UNDO *a, *b, *c;
+
+	assert(undo_new("A") == UNDO_NOERROR);
+	a = undo_get_session();
+	assert(a != NULL);
+	assert(undo_new("B") == UNDO_NOERROR);
+	b = undo_get_session();
+	assert(b != NULL);
+	assert(undo_set_session(a) == UNDO_NOERROR);
+	assert(undo_get_session() == a);
+	assert(undo_new("C") == UNDO_NOERROR);
+	c = undo_get_session();
+	assert(c != NULL);
+	assert(undo_set_session(b) == UNDO_NOERROR);
+	assert(undo_destroy() == UNDO_NOERROR);
+	assert(undo_new("B") == UNDO_NOERROR);
+	assert(undo_destroy() == UNDO_NOERROR);
+	assert(undo_set_session(c) == UNDO_NOERROR);
+	assert(undo_destroy() == UNDO_NOERROR);
+	assert(undo_set_session(a) == UNDO_NOERROR);
+	assert(undo_destroy() == UNDO_NOERROR);
+
+	return 0;
+}
+
+~~
+
+#include <assert.h>
+#include "undo.h"
+
+int main() {
+	unsigned char *a, *b;
+
+	assert(undo_new("undo") == UNDO_NOERROR);
+
+	a = undo_malloc(42);
+	assert(a != NULL);
+	memset(a, 0xff, 42);
+	
+	b = undo_malloc(16384);
+	assert(b != NULL);
+	memset(b, 0xee, 16384);
+
+	a = undo_realloc(a, 16384); 
+	assert(a != NULL);
+
+	assert(a[13] == 0xff);
+	assert(b[12] == 0xee);
+
+	memset(a, 0xff, 16384);
+
+	undo_free(a);
+	undo_free(b);
+
+	assert(undo_destroy() == UNDO_NOERROR);
+
+	return 0;	
+}
+
+~~
+
+#include <assert.h>
+#include "undo.h"
+
+int main() {
+	unsigned char *a;
+
+	assert(undo_new("undo") == UNDO_NOERROR);
+	assert(undo_set_memory_limit(1024 * 1024) == UNDO_NOERROR);
+
+	a = undo_malloc(42);
+	assert(a != NULL);
+	memset(a, 0x42, 42);
+	assert(undo_get_undo_count() == 0);
+	assert(undo_get_redo_count() == 0);
+	assert(undo_snapshot() == UNDO_NOERROR);
+	assert(undo_get_undo_count() == 0);
+	assert(undo_get_redo_count() == 0);
+	assert(a[1] == 0x42);
+	memset(a, 0x24, 42);
+	assert(undo_snapshot() == UNDO_NOERROR);
+	assert(undo_get_undo_count() == 1);
+	assert(undo_get_redo_count() == 0);
+	assert(a[2] == 0x24);
+	memset(a, 0x14, 42);
+	assert(undo_snapshot() == UNDO_NOERROR);
+	assert(undo_get_undo_count() == 2);
+	assert(undo_get_redo_count() == 0);
+
+	assert(undo_undo() == UNDO_NOERROR);
+	assert(undo_get_undo_count() == 1);
+	assert(undo_get_redo_count() == 1);
+	assert(a[3] == 0x24);
+	assert(undo_undo() == UNDO_NOERROR);
+	assert(undo_get_undo_count() == 0);
+	assert(undo_get_redo_count() == 2);
+	assert(a[4] == 0x42);
+	assert(undo_undo() != UNDO_NOERROR);
+	assert(undo_redo() == UNDO_NOERROR);
+	assert(a[5] == 0x24);
+	assert(undo_redo() == UNDO_NOERROR);
+	assert(a[6] == 0x14);
+	assert(undo_redo() != UNDO_NOERROR);
+
+	assert(undo_undo() == UNDO_NOERROR);
+	assert(a[3] == 0x24);
+	assert(a[2] == 0x24);
+	memset(a, 0x04, 42);
+	assert(undo_snapshot() == UNDO_NOERROR);
+	assert(undo_undo() == UNDO_NOERROR);
+	assert(a[3] == 0x14);
+	assert(undo_undo() == UNDO_NOERROR);
+	assert(a[3] == 0x24);
+	assert(undo_undo() == UNDO_NOERROR);
+	assert(a[3] == 0x42);
+	assert(undo_undo() != UNDO_NOERROR);
+
+	assert(undo_destroy() == UNDO_NOERROR);
+
+	return 0;
+}
+
+~~ UNDO_API_ERROR: UNDO_API
+
+#include <assert.h>
+#include "undo.h"
+
+int main() {
+	assert(undo_malloc(42) == NULL);
+	assert(undo_get_errcode() == UNDO_NOSESSION);
+	assert(undo_get_errcode() == UNDO_NOERROR);
+	assert(undo_strerror(-1) == NULL);
+	assert(undo_strerror(4242) == NULL);
+	assert(undo_strerror(UNDO_NOSESSION) != NULL);
+
+	return 0;
+}

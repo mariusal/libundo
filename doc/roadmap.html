@@ -1,0 +1,72 @@
+<HTML>
+<HEAD><TITLE>Libundo: Roadmap</TITLE></HEAD>
+<BODY BGCOLOR="#ffffff" FGCOLOR="#000000">
+<P>
+<IMG SRC="libundo.png" ALT="Libundo">
+
+<P>
+<H2>Libundo Development Roadmap</H2>
+
+<P>
+Libundo follows a version numbering scheme inspired by the Linux
+kernel.  An odd minor version number indicates a development version
+and an even minor version number indicates a stable production
+version.
+
+<P>
+The current release of Libundo is 0.7.0.  The code in this release is
+The Simplest Thing Which Could Possibly Work.  It is very sub-optimal
+in both execution speed and memory usage.  However, the API as it
+exists in 0.7.0 is likely to be very close to the 1.0.0 API.  The code
+is feature complete.  No new major features will be added before
+1.0.0.  This release is intended to provide application developers
+with a library to begin using in application development, with the
+acknowledgement that the performance is not yet what it could be.
+
+<P>
+<H2>0.7.x</H2>
+
+<P>
+For the remainder of the 0.7.x series, the goal is to optimize the
+performance of libundo, in both speed and memory, to the point that
+libundo is useful for applications with large amounts of undoable data
+and a wide variety of memory allocation strategies.
+
+<P>
+It is likely that Libundo will be modified to use zlib or a similar
+compression library to compress memory heap snapshots.  We will
+investigate storing memory deltas between sequential snapshots for
+even tighter memory usage.  The memory allocation algorithms used by
+the memory heap routines will also be improved for speed.  A better
+<TT>undo_realloc()</TT> will be provided which can potentially reuse
+existing memory locations.  There may be other optimization
+opportunities as well.
+
+<P>
+<H2>0.9.x</H2>
+
+<P>
+When Libundo is reasonably optimized, we will enter the 0.9.x series.
+The goal of 0.9.x is simply to clean up any remaining bugs and be sure
+about the Libundo API before it is frozen in 1.0.0.  Example
+applications will be written to provide easy illustration of the use
+of libundo.  When we are confident about the quality of the code and
+the API, and some reasonable example applications are available, we
+will release 1.0.0.
+
+<P>
+<H2>1.x.x</H2>
+
+<P>
+Libundo was designed with a quite simple interface and feature set to
+promote rapid development.  It is hoped that 1.0.0 will be available
+in the reasonably near future.  After the 1.0.0 release, all future
+versions of Libundo will support the 1.0.0 API for backwards
+compatibility.  
+
+<P>
+If Libundo is successful enough to warrant continued development, the
+1.1.x series will be the first to add new features to libundo.
+
+</BODY>
+</HTML>

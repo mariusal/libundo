@@ -1,0 +1,15 @@
+Libundo is a simple, easy-to-use library which manages recording and
+playback of undo/redo information for application developers.  It is
+designed to be simple to plug in to existing applications and require
+only a minimal amount of support code be written to support
+multi-level undo/redo.  Libundo handles all the details of determining
+what has changed after an undoable action is performed, recording that
+information and saving it for use when an undo is performed.  Libundo
+makes it easy for application writers to give end users what they
+want.
+
+Libundo is available under the GNU GPL and is not tied to any GUI
+libraries or application frameworks.  Libundo has a C language
+interface.  Libundo does require the ability to do Unix-style 
+memory mapping.
+
