@@ -1,4 +1,4 @@
-~~ STREAM: *../src/undo_error.o *../src/undo_memory_stream.o *undo_test.o
+~~ STREAM: *../src/undo_error.o *../src/undo_version.o *../src/undo_memory_stream.o *undo_test.o
 
 #include "undo_test.h"
 
@@ -420,6 +420,20 @@ int main() {
 	assert(undo_strerror(-1) == NULL);
 	assert(undo_strerror(4242) == NULL);
 	assert(undo_strerror(UNDO_NOSESSION) != NULL);
+
+	return 0;
+}
+
+~~ UNDO_API_VERSION: UNDO_API
+
+#include "undo_test.h"
+
+int main() {
+	unsigned major, minor, revision;
+	undo_get_version(&major, &minor, &revision);
+	assert(major == UNDO_MAJOR_VERSION);
+	assert(minor == UNDO_MINOR_VERSION);
+	assert(revision == UNDO_REVISION);
 
 	return 0;
 }

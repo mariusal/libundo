@@ -7,4 +7,5 @@ libundo_la_SOURCES = \
     undo_history.c \
     undo_session.c \
     undo_memory_stream.c \
-    undo_memory.c
+    undo_memory.c \
+    undo_version.c

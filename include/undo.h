@@ -22,6 +22,13 @@
 
 #include <stdlib.h>  /* For size_t */
 
+/* Versioning */
+#define UNDO_MAJOR_VERSION  0
+#define UNDO_MINOR_VERSION  8
+#define UNDO_REVISION       0
+
+void undo_get_version(unsigned *major, unsigned *minor, unsigned *revision);
+
 typedef struct _UNDO UNDO;
 
 /*  Undo session management  */
