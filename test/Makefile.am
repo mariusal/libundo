@@ -19,3 +19,8 @@ libundo_test_a_SOURCES = undo_test.h undo_test.c
 check_PROGRAMS = $(TESTS)
 
 AM_LDFLAGS = libundo_test.a ${top_srcdir}/src/libundo.la
+
+$(TESTS) : $(noinst_LIBRARIES)
+
+$(libundo_test_a_OBJECTS) : ${top_srcdir}/include/undoP.h \
+	${top_srcdir}/include/undo.h
