@@ -319,7 +319,7 @@ static void *undo_memory_new_block(UNDO_BLOCK **block_list, unsigned *len,
 	void *mem;
 
 	mem = MAP_NEW_ANON(size);
-	if(mem == NULL)
+	if(mem == MAP_FAILED)
 		return NULL;
 
 	if(undo_memory_new_block_record(block_list, len, mem, size)) {
@@ -449,11 +449,11 @@ static int undo_memory_add_blocks_from_stream(UNDO_MEMORY *memory,
 	do {
 		num_read = undo_memory_stream_read_header(stream, pos, &header);
 		if(num_read != STREAM_SERIALIZED_BLOCK_HEADER_SIZE) {
-			UNDO_SUCCESS;
+			return UNDO_NOMEM;
 		}
 		pos += num_read;
 
-		if(MAP_NEW_ANON_AT(header.addr, header.size) != header.addr) {
+		if(MAP_NEW_ANON_AT(header.addr, header.size) == MAP_FAILED) {
 			return UNDO_NOMEM;
 		}
 		undo_memory_block_header_record(memory, &header);
