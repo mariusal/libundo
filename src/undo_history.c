@@ -34,6 +34,7 @@ static int undo_history_add_item(UNDO_HISTORY *history,
 static UNDO_MEMORY_STREAM *undo_history_stream(UNDO_HISTORY *history);
 static void undo_history_shrink(UNDO_HISTORY *history, size_t size);
 static void undo_history_strip(UNDO_HISTORY *history, int count);
+static void undo_history_strip_trailing(UNDO_HISTORY *history);
 
 UNDO_HISTORY *undo_history_new(void) {
 	UNDO_HISTORY *history;
@@ -67,6 +68,10 @@ int undo_history_record(UNDO_HISTORY *history, UNDO_MEMORY_STREAM *stream) {
 		undo_history_shrink(history, 0);
 		UNDO_SUCCESS;
 	}
+	
+	if(history->logical)
+		undo_history_strip_trailing(history);
+    
 	undo_history_shrink(history, history->memory_limit - size);
 
 	mem = (void *)malloc(size);
@@ -126,6 +131,10 @@ unsigned undo_history_redo_count(UNDO_HISTORY *history) {
 
 void undo_history_set_memory_limit(UNDO_HISTORY *history, size_t limit) {
 	history->memory_limit = limit;
+}
+
+void undo_history_set_logical(UNDO_HISTORY *history, int onoff) {
+	history->logical = onoff;
 }
 
 size_t undo_history_memory_usage(UNDO_HISTORY *history) {
@@ -227,4 +236,24 @@ static void undo_history_strip(UNDO_HISTORY *history, int count) {
 			sizeof(UNDO_HISTORY_ITEM) * (history->length - count));
 	history->length -= count;
 	history->ix = history->length - 1;
+}
+
+static void undo_history_strip_trailing(UNDO_HISTORY *history) {
+	int ix;
+	UNDO_HISTORY_ITEM *new_item;
+    
+	for(ix = history->ix + 1; ix < history->length; ix++) {
+		free(history->item[ix].mem);
+	}
+
+	if(history->length > history->ix + 1) {
+		new_item = realloc(history->item, 
+			sizeof(UNDO_HISTORY_ITEM) * (history->ix + 1));
+		if(new_item == NULL) {
+			return;
+		}
+		history->item = new_item;
+
+		history->length = history->ix + 1;
+	}
 }

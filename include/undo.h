@@ -34,6 +34,9 @@ int undo_set_session(UNDO *undo);
 /*  Undo limits  */
 int undo_set_memory_limit(size_t max_memory);
 
+/*  History type  */
+int undo_set_history_logical(int onoff);
+
 /*  Memory management for undo-watched memory  */
 void *undo_malloc(size_t size);
 void *undo_realloc(void *mem, size_t size);

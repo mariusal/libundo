@@ -32,6 +32,7 @@ struct _UNDO_HISTORY {
 	unsigned length;
 	unsigned ix;
 	size_t memory_limit;
+        int logical;
 };
 
 struct _UNDO_HISTORY_ITEM {
@@ -51,6 +52,7 @@ unsigned undo_history_undo_count(UNDO_HISTORY *history);
 unsigned undo_history_redo_count(UNDO_HISTORY *history);
 
 void undo_history_set_memory_limit(UNDO_HISTORY *history, size_t limit);
+void undo_history_set_logical(UNDO_HISTORY *history, int onoff);
 size_t undo_history_memory_usage(UNDO_HISTORY *history);
 
 #endif

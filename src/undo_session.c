@@ -92,6 +92,15 @@ int undo_set_memory_limit(size_t max_memory) {
 	UNDO_SUCCESS;
 }
 
+int undo_set_history_logical(int onoff) {
+	if(undo_session == NULL)
+		UNDO_ERROR(UNDO_NOSESSION);
+
+	undo_history_set_logical(undo_session->history, onoff);
+
+	UNDO_SUCCESS;
+}
+
 unsigned undo_get_undo_count(void) {
 	if(undo_session == NULL)
 		return 0;
