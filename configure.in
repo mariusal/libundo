@@ -9,10 +9,28 @@ UNDO_CURRENT=1
 UNDO_REVISION=0
 UNDO_AGE=0
 
-AC_CHECK_PROGS(PERL, perl5 perl, NONE)
+AC_CYGWIN
+if test "$CYGWIN" = "yes"
+then
+	AC_CACHE_CHECK([for compatible version of Cygwin], cygwin_ok,
+		version=`cut -d' ' -f2 /proc/version`
+		if test $version \<  "1.5.13"
+		then
+			cygwin_ok="no"
+		else
+			cygwin_ok="yes"
+		fi
+	)
+fi
+if test "$cygwin_ok" = "no"
+then
+	AC_MSG_ERROR(You must have at least version 1.5.13 of Cygwin)
+fi
 
 AC_LIBTOOL_WIN32_DLL
 AM_PROG_LIBTOOL
+
+AC_CHECK_PROGS(PERL, perl5 perl, NONE)
 
 AC_OUTPUT([Makefile doc/Makefile include/Makefile src/Makefile test/Makefile
 	   test/test-undo.sh],
