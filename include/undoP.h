@@ -106,6 +106,8 @@ struct _UNDO_BLOCK {
 };
 
 struct _UNDO_MEMORY {
+	int pagesize;
+
 	UNDO_BLOCK *small_alloc_list;
 	unsigned small_alloc_list_count;
 

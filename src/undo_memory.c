@@ -49,7 +49,7 @@
 
 #define BLOCK_END(block) MEMORY_OFFSET((block).mem, (block).size)
 #define IN_BLOCK(block, m) ((m) >= (block).mem && (m) < BLOCK_END(block))
-#define BLOCK_PAGES(block) ((block).size / getpagesize())
+#define BLOCK_PAGES(mem, block) ((block).size / mem->pagesize)
 #define FOREACH_IN_BLOCK(block, mem) \
 			for((mem) = (block).mem; \
 				(mem) != BLOCK_END(block); \
@@ -62,7 +62,7 @@
 #define MAP_NEW_ANON(size) MAP_NEW_ANON_AT_FLAGS(0, (size), 0)
 #define MAP_NEW_ANON_AT(pos, size) \
             MAP_NEW_ANON_AT_FLAGS((pos), (size), MAP_FIXED)
-#define PAGE_REMAINDER(size) (getpagesize() - (size))
+#define PAGE_REMAINDER(mem, size) (mem->pagesize - (size))
 
 #define IF_IN_BLOCK_VAR \
 			unsigned _if_in_block_ix; \
@@ -102,6 +102,9 @@ UNDO_MEMORY *undo_memory_new(void) {
 	UNDO_MEMORY *mem;
 
 	mem = NEW(UNDO_MEMORY);
+	if (mem) {
+		mem->pagesize = getpagesize();
+	}
 
 	return mem;
 }
@@ -143,7 +146,7 @@ void *undo_memory_alloc(UNDO_MEMORY *memory, size_t size) {
 	while(size & (sizeof(size_t) - 1))
 		size++;
 
-	if(size < getpagesize() - UNDO_MEMORY_OVERHEAD * 2) {
+	if(size < memory->pagesize - UNDO_MEMORY_OVERHEAD * 2) {
 		return undo_memory_alloc_small(memory, size);
 	} else {
 		return undo_memory_alloc_large(memory, size);
@@ -191,11 +194,11 @@ unsigned undo_memory_pages_used(UNDO_MEMORY *memory) {
 	pages = 0;
 
 	FOREACH_SMALL_BLOCK(memory, block_ix, block) {
-		pages += BLOCK_PAGES(*block);
+		pages += BLOCK_PAGES(memory, *block);
 	}
 
 	FOREACH_LARGE_BLOCK(memory, block_ix, block) {
-		pages += BLOCK_PAGES(*block);
+		pages += BLOCK_PAGES(memory, *block);
 	}
 
 	return pages;
@@ -239,9 +242,9 @@ static void *undo_memory_alloc_small(UNDO_MEMORY *memory, size_t size) {
 static void *undo_memory_alloc_large(UNDO_MEMORY *memory, size_t size) {
 	size_t page_fraction;
 
-	page_fraction = size & (getpagesize() - 1);
+	page_fraction = size & (memory->pagesize - 1);
 	if(page_fraction) {
-		size += PAGE_REMAINDER(page_fraction);
+		size += PAGE_REMAINDER(memory, page_fraction);
 	}
 
 	return undo_memory_new_block(&memory->large_alloc_list,
@@ -302,14 +305,15 @@ static void *undo_memory_alloc_new_small_block(UNDO_MEMORY *mem, size_t size) {
 
 	page = undo_memory_new_block(&mem->small_alloc_list, 
 								 &mem->small_alloc_list_count,
-								 getpagesize());
+								 mem->pagesize);
 	if(page == NULL) {
 		return NULL;
 	}
 
 	MEMORY_SET_SIZE_USED(page, size + UNDO_MEMORY_OVERHEAD, 1);
 	next = MEMORY_NEXT(page);
-	MEMORY_SET_SIZE_USED(next, PAGE_REMAINDER(size + UNDO_MEMORY_OVERHEAD), 0);
+	MEMORY_SET_SIZE_USED(next,
+		PAGE_REMAINDER(mem, size + UNDO_MEMORY_OVERHEAD), 0);
 
 	return MEMORY_BODY(page);
 }
