@@ -1,3 +1,11 @@
+New with 0.8.1, released 2005-03-10:
+    * Fixed a couple of error handling cases.
+    * Rewrote test suite to eliminate dependency on Perl.
+    * Check for supported version of Cygwin (anything below 1.5.13 is buggy).
+    * Added support for building Windows DLLs.
+    * Other minor changes and fixes.
+    
+
 New with 0.8.0, released 2005-01-23:
 
     * Reincarnation after 5 years of voidness...
