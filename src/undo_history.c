@@ -40,16 +40,11 @@ UNDO_HISTORY *undo_history_new(void) {
 	UNDO_HISTORY *history;
 
 	history = NEW(UNDO_HISTORY);
-	if(history == NULL)
-		UNDO_ERROR_NULL(UNDO_NOMEM);
 
 	return history;
 }
 
 int undo_history_destroy(UNDO_HISTORY *history) {
-	if(history == NULL)
-		UNDO_ERROR(UNDO_BADPARAM);
-
 	free(history);
 
 	UNDO_SUCCESS;
@@ -61,7 +56,7 @@ int undo_history_record(UNDO_HISTORY *history, UNDO_MEMORY_STREAM *stream) {
 	int ret;
 
 	if(history->memory_limit == 0)
-		UNDO_ERROR(UNDO_NOLIMIT);
+		return UNDO_NOLIMIT;
 
 	size = undo_memory_stream_length(stream);
 	if(size > history->memory_limit) {
@@ -76,7 +71,7 @@ int undo_history_record(UNDO_HISTORY *history, UNDO_MEMORY_STREAM *stream) {
 
 	mem = (void *)malloc(size);
 	if(mem == NULL)
-		UNDO_ERROR(UNDO_NOMEM);
+		return UNDO_NOMEM;
 	stream->read(stream, 0, mem, size);
 
 	ret = undo_history_add_item(history, mem, size);
@@ -91,7 +86,7 @@ UNDO_MEMORY_STREAM *undo_history_undo(UNDO_HISTORY *history) {
 	UNDO_MEMORY_STREAM *stream;
 
 	if(history->ix == 0)
-		UNDO_ERROR_NULL(UNDO_NODO);
+		return NULL;
 
 	stream = undo_history_stream(history);
 
@@ -105,7 +100,7 @@ UNDO_MEMORY_STREAM *undo_history_redo(UNDO_HISTORY *history) {
 	UNDO_MEMORY_STREAM *stream;
 
 	if(history->ix >= history->length - 1)
-		UNDO_ERROR_NULL(UNDO_NODO);
+		return NULL;
 
 	stream = undo_history_stream(history);
 
@@ -177,7 +172,7 @@ static int undo_history_add_item(UNDO_HISTORY *history,
 	new_item = realloc(history->item, 
 					  sizeof(UNDO_HISTORY_ITEM) * (history->length + 1));
 	if(new_item == NULL) {
-		UNDO_ERROR(UNDO_NOMEM);
+		return UNDO_NOMEM;
 	}
 	history->item = new_item;
 
@@ -195,7 +190,7 @@ static UNDO_MEMORY_STREAM *undo_history_stream(UNDO_HISTORY *history) {
 
 	stream = NEW(UNDO_MEMORY_STREAM);
 	if(stream == NULL)
-		UNDO_ERROR_NULL(UNDO_NOMEM);
+		return NULL;
 
 	stream->implementation = history;
 	stream->destroy = undo_history_stream_destroy;

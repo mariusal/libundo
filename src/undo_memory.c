@@ -104,15 +104,13 @@ UNDO_MEMORY *undo_memory_new(void) {
 	UNDO_MEMORY *mem;
 
 	mem = NEW(UNDO_MEMORY);
-	if(mem == NULL)
-		UNDO_ERROR_NULL(UNDO_NOMEM);
 
 	return mem;
 }
 
 int undo_memory_destroy(UNDO_MEMORY *memory) {
 	if(memory == NULL)
-		UNDO_ERROR(UNDO_BADPARAM);
+		return UNDO_BADPARAM;
 
 	undo_memory_clear(memory);  
 	free(memory);
@@ -169,7 +167,7 @@ int undo_memory_free(UNDO_MEMORY *memory, void *alloc) {
 										_if_in_block_ix);
 	}
 
-	UNDO_ERROR(UNDO_BADPARAM);
+	return UNDO_BADPARAM;
 }
 
 size_t undo_memory_size(UNDO_MEMORY *memory, void *alloc) {
@@ -210,7 +208,7 @@ UNDO_MEMORY_STREAM *undo_memory_stream(UNDO_MEMORY *memory) {
 
 	stream = NEW(UNDO_MEMORY_STREAM);
 	if(stream == NULL)
-		UNDO_ERROR_NULL(UNDO_NOMEM);
+		return NULL;
 
 	stream->implementation = memory;
 	stream->destroy = (void *)undo_stream_destroy;
@@ -308,7 +306,7 @@ static void *undo_memory_alloc_new_small_block(UNDO_MEMORY *mem, size_t size) {
 								 &mem->small_alloc_list_count,
 								 getpagesize());
 	if(page == NULL) {
-		UNDO_ERROR_NULL(UNDO_NOMEM);
+		return NULL;
 	}
 
 	MEMORY_SET_SIZE_USED(page, size + UNDO_MEMORY_OVERHEAD, 1);
@@ -324,7 +322,7 @@ static void *undo_memory_new_block(UNDO_BLOCK **block_list, unsigned *len,
 
 	mem = MAP_NEW_ANON(size);
 	if(mem == NULL)
-		UNDO_ERROR_NULL(UNDO_NOMEM);
+		return NULL;
 
 	if(undo_memory_new_block_record(block_list, len, mem, size)) {
 		munmap(mem, size);
@@ -342,7 +340,7 @@ static int undo_memory_new_block_record(UNDO_BLOCK **block_list, unsigned *len,
 	new_block_list = (UNDO_BLOCK *)realloc(*block_list, 
 										   (*len + 1) * sizeof(UNDO_BLOCK));
 	if(new_block_list == NULL) {
-		UNDO_ERROR(UNDO_NOMEM);
+		return UNDO_NOMEM;
 	}
 	*block_list = new_block_list;
 	(*block_list)[*len].mem = mem;
@@ -458,7 +456,7 @@ static int undo_memory_add_blocks_from_stream(UNDO_MEMORY *memory,
 		pos += num_read;
 
 		if(MAP_NEW_ANON_AT(header.addr, header.size) != header.addr) {
-			UNDO_ERROR(UNDO_NOMEM);
+			return UNDO_NOMEM;
 		}
 		undo_memory_block_header_record(memory, &header);
 

@@ -22,10 +22,10 @@
 
 #define NEW(type) ((type *)calloc(1, sizeof(type)))
 
-#define UNDO_SUCCESS            return UNDO_NOERROR;
-#define UNDO_ERROR(err)         return (undo_set_error(err), (err));
-#define UNDO_ERROR_NULL(err)    return (undo_set_error(err), NULL);
+#define UNDO_SUCCESS               return UNDO_NOERROR;
+#define UNDO_ERROR(undo, err)      return (undo_set_error(undo, err), (err));
+#define UNDO_ERROR_NULL(undo, err) return (undo_set_error(undo, err), NULL);
 
-void undo_set_error(int err);
+void undo_set_error(UNDO *undo, int err);
 
 #endif

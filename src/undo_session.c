@@ -27,29 +27,29 @@ UNDO *undo_new(const char *session_name) {
 	UNDO *undo = NULL;
 
 	if(session_name == NULL)
-		UNDO_ERROR_NULL(UNDO_BADPARAM);
+		return NULL;
 
 	undo = NEW(UNDO);
 	if(undo == NULL)
-		UNDO_ERROR_NULL(UNDO_NOMEM);
+		return NULL;
 
 	undo->name = (char *)malloc(strlen(session_name) + 1);
 	if(undo->name == NULL) {
 		undo_destroy(undo);
-		UNDO_ERROR_NULL(UNDO_NOMEM);
+		return NULL;
 	}
 	strcpy(undo->name, session_name);
 
 	undo->memory = undo_memory_new();
 	if(undo->memory == NULL) {
 		undo_destroy(undo);
-		UNDO_ERROR_NULL(UNDO_NOMEM);
+		return NULL;
 	}
 
 	undo->history = undo_history_new();
 	if(undo->history == NULL) {
 		undo_destroy(undo);
-		UNDO_ERROR_NULL(UNDO_NOMEM);
+		return NULL;
 	}
 
 	return undo;
@@ -57,7 +57,7 @@ UNDO *undo_new(const char *session_name) {
 
 int undo_destroy(UNDO *undo) {
 	if(undo == NULL)
-		UNDO_ERROR(UNDO_NOSESSION);
+		UNDO_ERROR(undo, UNDO_NOSESSION);
 
 	if(undo->name)
 		free(undo->name);
@@ -75,7 +75,7 @@ int undo_destroy(UNDO *undo) {
 
 int undo_set_memory_limit(UNDO *undo, size_t max_memory) {
 	if(undo == NULL)
-		UNDO_ERROR(UNDO_NOSESSION);
+		UNDO_ERROR(undo, UNDO_NOSESSION);
 
 	undo_history_set_memory_limit(undo->history, max_memory);
 
@@ -84,7 +84,7 @@ int undo_set_memory_limit(UNDO *undo, size_t max_memory) {
 
 int undo_set_history_logical(UNDO *undo, int onoff) {
 	if(undo == NULL)
-		UNDO_ERROR(UNDO_NOSESSION);
+		UNDO_ERROR(undo, UNDO_NOSESSION);
 
 	undo_history_set_logical(undo->history, onoff);
 
@@ -110,15 +110,17 @@ int undo_undo(UNDO *undo) {
 	int ret;
 
 	if(undo == NULL)
-		UNDO_ERROR(UNDO_NOSESSION);
+		UNDO_ERROR(undo, UNDO_NOSESSION);
 
 	if(undo_history_undo_count(undo->history) == 0)
-		UNDO_ERROR(UNDO_NODO);
+		UNDO_ERROR(undo, UNDO_NODO);
 
 	stream = undo_history_undo(undo->history);
 	if(stream == NULL)
-		UNDO_ERROR(UNDO_NOMEM);
+		UNDO_ERROR(undo, UNDO_NOMEM);
 	ret = undo_memory_set(undo->memory, stream);
+	if (ret)
+		UNDO_ERROR(undo, ret);
 	stream->destroy(stream);
 
 	return ret;
@@ -129,14 +131,14 @@ int undo_redo(UNDO *undo) {
 	int ret;
 
 	if(undo == NULL)
-		UNDO_ERROR(UNDO_NOSESSION);
+		UNDO_ERROR(undo, UNDO_NOSESSION);
 	
 	if(undo_history_redo_count(undo->history) == 0)
-		UNDO_ERROR(UNDO_NODO);
+		UNDO_ERROR(undo, UNDO_NODO);
 
 	stream = undo_history_redo(undo->history);
 	if(stream == NULL)
-		UNDO_ERROR(UNDO_NOMEM);
+		UNDO_ERROR(undo, UNDO_NOMEM);
 	ret = undo_memory_set(undo->memory, stream);
 	stream->destroy(stream);
 
@@ -148,22 +150,29 @@ int undo_snapshot(UNDO *undo) {
 	int ret;
 
 	if(undo == NULL)
-		UNDO_ERROR(UNDO_NOSESSION);
+		UNDO_ERROR(undo, UNDO_NOSESSION);
 
 	stream = undo_memory_stream(undo->memory);
 	if(stream == NULL)
-		UNDO_ERROR(UNDO_NOMEM);
+		UNDO_ERROR(undo, UNDO_NOMEM);
 	ret = undo_history_record(undo->history, stream);
-	stream->destroy(stream);
+	if(ret) {
+		UNDO_ERROR(undo, ret);
+        }
+        stream->destroy(stream);
 
 	return ret;
 }
 
 void *undo_malloc(UNDO *undo, size_t size) {
-	if(undo == NULL)
-		UNDO_ERROR_NULL(UNDO_NOSESSION);
+	void  *p;
+        if(undo == NULL)
+		UNDO_ERROR_NULL(undo, UNDO_NOSESSION);
 
-	return undo_memory_alloc(undo->memory, size);
+	p = undo_memory_alloc(undo->memory, size);
+	if (size > 0 && p == NULL)
+		UNDO_ERROR_NULL(undo, UNDO_NOMEM);
+	return p;
 }
 
 void *undo_realloc(UNDO *undo, void *mem, size_t size) {
@@ -171,7 +180,7 @@ void *undo_realloc(UNDO *undo, void *mem, size_t size) {
 	void *new_mem;
 
 	if(undo == NULL)
-		UNDO_ERROR_NULL(UNDO_NOSESSION);
+		UNDO_ERROR_NULL(undo, UNDO_NOSESSION);
 
 	if(mem == NULL)
 		return undo_memory_alloc(undo->memory, size);
@@ -185,10 +194,10 @@ void *undo_realloc(UNDO *undo, void *mem, size_t size) {
 
 	new_mem = undo_memory_alloc(undo->memory, size);
 	if(new_mem == NULL)
-		UNDO_ERROR_NULL(UNDO_NOMEM);
+		UNDO_ERROR_NULL(undo, UNDO_NOMEM);
 
 	memcpy(new_mem, mem, min_size);
-	undo_memory_free(undo->memory, mem);
+	undo_memory_free(undo->memory, mem); /* FIXME - check for return code */
 	
 	return new_mem; 
 }

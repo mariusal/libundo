@@ -58,7 +58,7 @@ unsigned undo_get_redo_count(const UNDO *undo);
 #define UNDO_NOLIMIT        5   /* No memory limit specified */
 
 /*  Error recovery  */
-int undo_get_errcode(void);
+int undo_get_errcode(UNDO *undo);
 char *undo_strerror(int errcode);
 
 #endif

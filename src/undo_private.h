@@ -29,6 +29,8 @@ struct _UNDO {
 
 	UNDO_MEMORY *memory;
 	UNDO_HISTORY *history;
+        
+        int last_error;
 };
 
 #endif

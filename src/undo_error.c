@@ -18,20 +18,25 @@
 */
 
 #include "undo.h"
+#include "undo_private.h"
 #include "undo_error.h"
 
-static int undo_last_error = UNDO_NOERROR;
-
-void undo_set_error(int err) {
-	undo_last_error = err;
+void undo_set_error(UNDO *undo, int err) {
+	if (undo) {
+        	undo->last_error = err;
+	}
 }
 
-int undo_get_errcode(void) {
+int undo_get_errcode(UNDO *undo) {
 	int ret;
 
-	ret = undo_last_error;
-	undo_last_error = UNDO_NOERROR;
-	return ret;
+	if (undo) {
+		ret = undo->last_error;
+		undo->last_error = UNDO_NOERROR;
+		return ret;
+	} else {
+		return UNDO_NOSESSION;
+	}
 }
 
 char *undo_strerror(int errcode) {
