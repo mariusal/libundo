@@ -1,0 +1,14 @@
+#! /bin/sh 
+
+echo ""
+echo "running libtoolize"
+libtoolize --copy --force --automake
+
+echo "running aclocal"
+aclocal -I .
+
+echo "running autoconf"
+autoconf
+
+echo "running automake"
+automake --add-missing --copy --force-missing --foreign --ignore-deps
