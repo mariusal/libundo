@@ -1,4 +1,13 @@
-NEWS
+New with 0.8.0, released 2005-01-23:
 
-This is version 0.7.0, the initial public release.  News will follow
-in future releases.
+    * Reincarnation after 5 years of voidness...
+    * Made the library thread-safe. Each undo_* function now gets UNDO *
+      session as the first argument. Removed undo_get_session() and
+      undo_set_session().
+    * Added versioning API.
+    * Other minor changes and fixes.
+
+
+New with 0.7.0, released 1999-10-17:
+
+    * First public release (Matt Kimball)
