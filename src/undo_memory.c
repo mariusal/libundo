@@ -449,7 +449,7 @@ static int undo_memory_add_blocks_from_stream(UNDO_MEMORY *memory,
 	do {
 		num_read = undo_memory_stream_read_header(stream, pos, &header);
 		if(num_read != STREAM_SERIALIZED_BLOCK_HEADER_SIZE) {
-			return UNDO_NOMEM;
+			UNDO_SUCCESS;
 		}
 		pos += num_read;
 
