@@ -17,6 +17,8 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include <string.h>
+
 #include "undoP.h"
 
 size_t undo_memory_stream_write(size_t offset, void *mem, size_t size,

@@ -17,6 +17,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include <string.h>
 
 #include "undoP.h"
 
@@ -64,7 +65,7 @@ int undo_history_record(UNDO_HISTORY *history, UNDO_MEMORY_STREAM *stream) {
     
 	undo_history_shrink(history, history->memory_limit - size);
 
-	mem = (void *)malloc(size);
+	mem = malloc(size);
 	if(mem == NULL)
 		return UNDO_NOMEM;
 	stream->read(stream, 0, mem, size);

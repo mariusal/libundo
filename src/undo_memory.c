@@ -19,6 +19,7 @@
 
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <sys/mman.h>
 
 #include "undoP.h"
@@ -212,8 +213,8 @@ UNDO_MEMORY_STREAM *undo_memory_stream(UNDO_MEMORY *memory) {
 		return NULL;
 
 	stream->implementation = memory;
-	stream->destroy = (void *)undo_stream_destroy;
-	stream->read = (void *)undo_stream_read;
+	stream->destroy = undo_stream_destroy;
+	stream->read = undo_stream_read;
 
 	return (UNDO_MEMORY_STREAM *)stream;
 }
