@@ -1,5 +1,4 @@
 Makefile
 Makefile.in
-test-undo.sh
-failed
-
+.libs
+test? test1?

@@ -21,17 +21,14 @@ then
 			cygwin_ok="yes"
 		fi
 	)
-fi
-if test "$cygwin_ok" = "no"
-then
-	AC_MSG_ERROR(You must have at least version 1.5.13 of Cygwin)
+	if test "$cygwin_ok" = "no"
+	then
+		AC_MSG_ERROR(You must have at least version 1.5.13 of Cygwin)
+	fi
+
+	AC_LIBTOOL_WIN32_DLL
 fi
 
-AC_LIBTOOL_WIN32_DLL
 AM_PROG_LIBTOOL
 
-AC_CHECK_PROGS(PERL, perl5 perl, NONE)
-
-AC_OUTPUT([Makefile doc/Makefile include/Makefile src/Makefile test/Makefile
-	   test/test-undo.sh],
-	  [chmod a+x test/test-undo.sh])
+AC_OUTPUT([Makefile doc/Makefile include/Makefile src/Makefile test/Makefile])
