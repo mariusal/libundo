@@ -85,37 +85,25 @@ destroy the active undo session.
 
 <P>
 <BLOCKQUOTE>
-	<TT>int undo_new(char *session_name);</TT><BR>
-	<TT>int undo_destroy(void);</TT><BR>
-</BLOCKQUOTE>
-
-<P>
-<TT>undo_new()</TT> will create a new session with the given
-<TT>session_name</TT>.  <TT>session_name</TT> should be a
-non-<TT>NULL</TT> character string describing the document.  The
-filename the document was read from might be appropriate.  The
-<TT>session_name</TT> isn't currently used by Libundo, but future
-versions may include crash-recovery features.  The
-<TT>session_name</TT> would be used to identify documents from
-previously crashed sessions.
-
-<P>
-There also exist functions to manage which undo session is currently
-active.  <TT>undo_get_session()</TT> will return the current session while
-<TT>undo_set_session()</TT> will set the currently active session.
-
-<P>
-<BLOCKQUOTE>
-	<TT>UNDO *undo_get_session(void);</TT><BR>
-	<TT>int undo_set_session(UNDO *undo);</TT><BR>
+	<TT>UNDO *undo_new(void);</TT><BR>
+	<TT>int undo_destroy(UNDO *undo);</TT><BR>
 </BLOCKQUOTE>
 
 <P>
 If your application has multiple documents open, you will likely have
-a distinct undo session for each document.  Before you call any other
-undo related functions, you will want to first call
-<TT>undo_set_session()</TT> so that you are sure that the proper
-session is activated.
+a distinct undo session for each document.
+
+<P>
+<BLOCKQUOTE>
+	<TT>int undo_set_history_logical(UNDO *undo, int onoff);</TT><BR>
+</BLOCKQUOTE>
+This function sets history type. If the <TT>onoff</TT> parameter is 1, a new
+snapshot performed after a series of undo operations will erase all redoable
+memory past the current point. Otherwise, the new snapshot will be appended
+to the list of existing snapshots. The latter case corresponds to the
+libundo-0.7.0 behavior and is the default as of now, but this may change in
+the future, so please don't rely upon the default and set the history type
+explicitly.
 
 <P>
 Finally, each undo session has an associated memory limit.  Use
@@ -123,7 +111,7 @@ Finally, each undo session has an associated memory limit.  Use
 
 <P>
 <BLOCKQUOTE>
-	<TT>int undo_set_memory_limit(size_t max_memory);</TT><BR>
+	<TT>int undo_set_memory_limit(UNDO *undo, size_t max_memory);</TT><BR>
 </BLOCKQUOTE>
 
 <P>
@@ -145,15 +133,15 @@ replacements for <TT>malloc()</TT>, <TT>realloc()</TT> and
 
 <P>
 <BLOCKQUOTE>
-	<TT>void *undo_malloc(size_t size);</TT><BR>
-	<TT>void *undo_realloc(void *mem, size_t size);</TT><BR>
-	<TT>void undo_free(void *mem);</TT><BR>
+	<TT>void *undo_malloc(UNDO *undo, size_t size);</TT><BR>
+	<TT>void *undo_realloc(UNDO *undo, void *mem, size_t size);</TT><BR>
+	<TT>void undo_free(UNDO *undo, void *mem);</TT><BR>
 </BLOCKQUOTE>
 
 <P>
 There shouldn't be any surprises here.  Each of these functions
 behaves the same as its C&nbsp;library counterpart, except it uses the
-memory heap of the currently active undo&nbsp;session.
+memory heap of its undo&nbsp;session, passed by the first argument.
 
 <P>
 The only memory management function without a C&nbsp;library
@@ -161,11 +149,11 @@ counterpart is <TT>undo_snapshot()</TT>.
 
 <P>
 <BLOCKQUOTE>
-	<TT>int undo_snapshot(void);</TT><BR>
+	<TT>int undo_snapshot(UNDO *undo);</TT><BR>
 </BLOCKQUOTE>
 
 <P>
-<TT>undo_snapshot()</TT> simply records state of the current undo
+<TT>undo_snapshot()</TT> simply records state of the given undo
 session's memory heap, including information about what blocks are
 currently allocated.  It will honor the memory limit set by
 <TT>undo_set_memory_limit()</TT>.  This recorded snapshot can be
@@ -182,17 +170,17 @@ After more than one snapshot has been recorded by
 
 <P>
 <BLOCKQUOTE>
-	<TT>int undo_undo(void);</TT><BR>
-	<TT>int undo_redo(void);</TT><BR>
+	<TT>int undo_undo(UNDO *undo);</TT><BR>
+	<TT>int undo_redo(UNDO *undo);</TT><BR>
 </BLOCKQUOTE>
 
 <P>
-Both functions simply restore the state of the current session's
+Both functions simply restore the state of the given session's
 memory heap to that which is represented by the appropriate snapshot.
 Memory allocated by <TT>undo_malloc()</TT> may be freed or reallocated
 as a result of calling <TT>undo_undo()</TT> or <TT>undo_redo()</TT>.
 Be careful that you don't have references to undoable memory which
-might be freed in non-undoable memory.
+might be freed in non-undoable memory, or vise versa.
 
 <P>
 The functions <TT>undo_get_undo_count()</TT> and
@@ -200,14 +188,14 @@ The functions <TT>undo_get_undo_count()</TT> and
 
 <P>
 <BLOCKQUOTE>
-	<TT>unsigned undo_get_undo_count(void);</TT><BR>
-	<TT>unsigned undo_get_redo_count(void);</TT><BR>
+	<TT>unsigned undo_get_undo_count(const UNDO *undo);</TT><BR>
+	<TT>unsigned undo_get_redo_count(const UNDO *undo);</TT><BR>
 </BLOCKQUOTE>
 
 <P>
 These functions simply return the numbers of times your application
 can expect to undo or redo undoable actions from the current point in
-the undo stack of the active session.  These can be useful to set
+the undo stack of the given session.  These can be useful to set
 undo/redo menu items and buttons in your GUI to insensitive when there
 are no undos or redos possible.
 
@@ -236,7 +224,7 @@ function, <TT>undo_get_errcode()</TT> can be used to retrieve the
 error code for the last error.
 
 <BLOCKQUOTE>
-	<TT>int undo_get_errcode(void);</TT><BR>
+	<TT>int undo_get_errcode(UNDO *undo);</TT><BR>
 </BLOCKQUOTE>
 
 <P>
@@ -259,32 +247,21 @@ newline at the end suitable for printing in the case of an error.
 
 
 <P>
+<H2>The History of Libundo</H2>
+
+<P>
+Libundo was written by Matt Kimball. The first and the only public release,
+0.7.0, was made by him on October, 1999. In 2005, Evgeny Stambulchik revived
+the project.
+
+<P>
 <H2>The Future of Libundo</H2>
 
 <P>
-Future versions of Libundo may include application crash recovery
-though the saving of snapshots to disk.  Hooks may be provided so that
-applications can register callbacks to be executed at undo and redo
-time to perform actions which aren't easily mapped into the
-<TT>undo_malloc()</TT> paradigm.  Similarly, future versions of
-Libundo may be able to watch regions of memory for changes to ease
-integration with applications which use <TT>mmap()</TT> to map files
-into memory.  If you've got an opinion about which extensions to
-Libundo would be useful and which are unnecessary, I'd love to hear
-it.
+See the <A HREF="roadmap.html">Roadmap</A> document for an approximate
+development plan. If you've got an opinion about which extensions to Libundo
+would be useful and which are unnecessary, make your voice heard.
 
-
-<P>
-<H2>About the Author</H2>
-
-<P>
-Matt Kimball (<A HREF="mailto:mkimball@xmission.com">mkimball@xmission.com</A>)
-is a geek who enjoys systems programming, computer graphics and user
-interface issues.  He currently lives in Palo Alto and is working at
-<A HREF="http://www.pdi.com/">Pacific Data Images</A> on PDI's next
-fully computer generated feature film, though Libundo has been created
-entirely on his own time and own equipment, and is unrelated to PDI's
-business.
 
 </BODY>
 </HTML>

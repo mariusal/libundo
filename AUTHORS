@@ -1,7 +1,5 @@
 Libundo contains code written by:
 
-Matt Kimball  <mkimball@xmission.com>
+Matt Kimball (everything up to and including version 0.7.0)
+Evgeny Stambulchik (all modifications made since 0.7.0)
 
-If you would like to help improve libundo, send unified diffs to 
-Matt Kimball (mkimball@xmission.com).  Please put "[Undo]" in the
-subject line of your mail.
