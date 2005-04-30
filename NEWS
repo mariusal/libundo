@@ -1,3 +1,10 @@
+New with 0.8.2, released 2005-05-01:
+
+    * Fixed a serious bug, when allocation of a large chunk (larger than the
+      page size) after an undo operation would corrupt the memory. The bug
+      was introduced in 0.8.1.
+
+
 New with 0.8.1, released 2005-03-10:
 
     * Fixed a couple of error handling cases.
