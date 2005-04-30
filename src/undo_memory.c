@@ -438,11 +438,14 @@ static void undo_memory_clear(UNDO_MEMORY *memory) {
 	FOREACH_SMALL_BLOCK(memory, block_ix, block) {
 		munmap(block->mem, block->size);
 	}
+	memory->small_alloc_list = NULL;
+	memory->small_alloc_list_count = 0;
+
 	FOREACH_LARGE_BLOCK(memory, block_ix, block) {
 		munmap(block->mem, block->size);
 	}
-
-	memset(memory, 0, sizeof(UNDO_MEMORY));
+	memory->large_alloc_list = NULL;
+	memory->large_alloc_list_count = 0;
 }
 
 static int undo_memory_add_blocks_from_stream(UNDO_MEMORY *memory,
