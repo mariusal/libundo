@@ -41,6 +41,15 @@ UNDO_HISTORY *undo_history_new(void) {
 }
 
 int undo_history_destroy(UNDO_HISTORY *history) {
+	if (history->item) {
+		int ix;
+
+		for(ix = 0; ix < history->length; ix++) {
+			free(history->item[ix].mem);
+		}
+
+		free(history->item);
+    }
 	free(history);
 
 	UNDO_SUCCESS;
