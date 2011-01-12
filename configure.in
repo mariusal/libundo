@@ -12,16 +12,16 @@ UNDO_AGE=0
 AC_CYGWIN
 if test "$CYGWIN" = "yes"
 then
-	AC_CACHE_CHECK([for compatible version of Cygwin], cygwin_ok,
+	AC_CACHE_CHECK([for compatible version of Cygwin], cygwin_cv_ok,
 		version=`cut -d' ' -f2 /proc/version`
 		if test $version \<  "1.5.13"
 		then
-			cygwin_ok="no"
+			cygwin_cv_ok="no"
 		else
-			cygwin_ok="yes"
+			cygwin_cv_ok="yes"
 		fi
 	)
-	if test "$cygwin_ok" = "no"
+	if test "$cygwin_cv_ok" = "no"
 	then
 		AC_MSG_ERROR(You must have at least version 1.5.13 of Cygwin)
 	fi
