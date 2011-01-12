@@ -13,5 +13,7 @@ libundo_la_SOURCES = \
     undo_memory.c \
     undo_version.c
 
+libundo_la_CFLAGSS = -Wall -O2
+
 $(libundo_la_OBJECTS) : ${top_srcdir}/include/undoP.h \
 	${top_srcdir}/include/undo.h
