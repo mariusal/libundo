@@ -11,7 +11,8 @@ libundo_la_SOURCES = \
     undo_session.c \
     undo_memory_stream.c \
     undo_memory.c \
-    undo_version.c
+    undo_version.c \
+    undo_win_mman.i
 
 libundo_la_CFLAGSS = -Wall -O2
 

@@ -20,7 +20,14 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <sys/mman.h>
+
+#ifdef HAVE_SYS_MMAN_H
+# include <sys/mman.h>
+#else
+# ifdef __WIN32
+#  include "undo_win_mman.i"
+# endif /* __WIN32 */
+#endif /* HAVE_SYS_MMAN_H */
 
 #include "undoP.h"
 
