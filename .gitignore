@@ -1,4 +1,7 @@
+depcomp
+src/.deps
 src/.libs
+test/.deps
 test/.libs
 test/libundo_test.a
 test/test1
