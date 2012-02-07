@@ -29,6 +29,7 @@
 								<option id="gnu.c.compiler.option.include.paths.1131697855" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/include"/>
 									<listOptionValue builtIn="false" value="/usr/lib/gcc/x86_64-linux-gnu/4.6/include"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/libundo/include}&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1369729098" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
