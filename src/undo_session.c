@@ -174,6 +174,9 @@ void *undo_realloc(UNDO *undo, void *mem, size_t size) {
 	if(size < min_size)
 		min_size = size;
 
+	if(size == min_size)
+		return mem;
+
 	new_mem = undo_memory_alloc(undo->memory, size);
 	if(new_mem == NULL)
 		UNDO_ERROR_NULL(undo, UNDO_NOMEM);
