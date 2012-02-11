@@ -66,7 +66,7 @@
 #define MAP_NEW_ANON_AT_FLAGS(pos, size, flags) \
             (mmap((pos), (size), \
 			      PROT_READ | PROT_WRITE | PROT_EXEC, \
-				  MAP_PRIVATE | MAP_ANONYMOUS | (flags), 0, 0))
+				  MAP_PRIVATE | MAP_ANONYMOUS | (flags), -1, 0))
 #define MAP_NEW_ANON(size) MAP_NEW_ANON_AT_FLAGS(0, (size), 0)
 #define MAP_NEW_ANON_AT(pos, size) \
             MAP_NEW_ANON_AT_FLAGS((pos), (size), MAP_FIXED)
