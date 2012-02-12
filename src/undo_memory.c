@@ -452,7 +452,6 @@ static void undo_memory_clear(UNDO_MEMORY *memory) {
 
 	FOREACH_SMALL_BLOCK(memory, block_ix, block) {
 		munmap(block->mem, block->size);
-		free(block);
 	}
 	memory->small_alloc_list = NULL;
 	memory->small_alloc_list_count = 0;
