@@ -261,30 +261,38 @@ static void *undo_memory_alloc_large(UNDO_MEMORY *memory, size_t size) {
 }
 
 static void *undo_memory_alloc_small_block(UNDO_BLOCK *block, size_t size) {
-	void *mem;
-	size_t new_size;
+    void *mem;
+    size_t new_size, old_size;
 
-	undo_memory_block_coalesce_free(block);
+    undo_memory_block_coalesce_free(block);
 
-	new_size = size + UNDO_MEMORY_OVERHEAD;
-	FOREACH_IN_BLOCK(*block, mem) {
-		if(!MEMORY_USED(mem) && MEMORY_SIZE(mem) >= new_size) {
-			if(MEMORY_SIZE(mem) == new_size) {
-				MEMORY_SET_SIZE_USED(mem, new_size, 1);
-			} else {
-				size_t old_size;
-				void *next;
+    new_size = size + UNDO_MEMORY_OVERHEAD;
+    FOREACH_IN_BLOCK(*block, mem) {
+        if (MEMORY_USED(mem)) continue;
 
-				old_size = MEMORY_SIZE(mem);
-				MEMORY_SET_SIZE_USED(mem, new_size, 1);
-				next = MEMORY_NEXT(mem);
-				MEMORY_SET_SIZE_USED(next, old_size - new_size, 0);
-			}
-			return MEMORY_BODY(mem);
-		}
-	}
+        old_size = MEMORY_SIZE(mem);
 
-	return NULL;
+        if (old_size == new_size) {
+            MEMORY_SET_SIZE_USED(mem, new_size, 1);
+            return MEMORY_BODY(mem);
+        }
+
+        if (mem + new_size == BLOCK_END(*block) - UNDO_MEMORY_OVERHEAD) {
+            MEMORY_SET_SIZE_USED(mem, old_size, 1);
+            return MEMORY_BODY(mem);
+        }
+
+        if (old_size > new_size) {
+            void *next;
+
+            MEMORY_SET_SIZE_USED(mem, new_size, 1);
+            next = MEMORY_NEXT(mem);
+            MEMORY_SET_SIZE_USED(next, old_size - new_size, 0);
+            return MEMORY_BODY(mem);
+        }
+    }
+
+    return NULL;
 }
 
 static void undo_memory_block_coalesce_free(UNDO_BLOCK *block) {
