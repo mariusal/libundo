@@ -380,7 +380,7 @@ static int undo_memory_delete_block(UNDO_BLOCK **block_list, unsigned *length,
 		free(*block_list);
 		new_block_list = NULL;
 	} else {
-		memcpy(&(*block_list)[index], &(*block_list)[index + 1],
+		memmove(&(*block_list)[index], &(*block_list)[index + 1],
 			   sizeof(UNDO_BLOCK) * (*length - 1 - index));
 		new_block_list = realloc(*block_list, 
 								 sizeof(UNDO_BLOCK) * (*length - 1));
