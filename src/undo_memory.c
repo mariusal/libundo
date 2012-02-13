@@ -162,21 +162,29 @@ void *undo_memory_alloc(UNDO_MEMORY *memory, size_t size) {
 }
 
 int undo_memory_free(UNDO_MEMORY *memory, void *alloc) {
-	IF_IN_BLOCK_VAR;
+    IF_IN_BLOCK_VAR;
+    void *mem;
 
-	IF_IN_SMALL_BLOCK(memory, alloc) {
-		MEMORY_BACKUP_OVERHEAD(alloc);
-		MEMORY_SET_SIZE_USED(alloc, MEMORY_SIZE(alloc), 0);
-		UNDO_SUCCESS;
-	}
+    IF_IN_SMALL_BLOCK(memory, alloc) {
+        MEMORY_BACKUP_OVERHEAD(alloc);
+        MEMORY_SET_SIZE_USED(alloc, MEMORY_SIZE(alloc), 0);
 
-	IF_IN_LARGE_BLOCK(memory, alloc) {
-		return undo_memory_delete_block(&memory->large_alloc_list,
-										&memory->large_alloc_list_count,
-										_if_in_block_ix);
-	}
+        FOREACH_IN_BLOCK(*_if_in_block, mem) {
+            if (MEMORY_USED(mem)) UNDO_SUCCESS;
+        }
 
-	return UNDO_BADPARAM;
+        return undo_memory_delete_block(&memory->small_alloc_list,
+                                        &memory->small_alloc_list_count,
+                                        _if_in_block_ix);
+    }
+
+    IF_IN_LARGE_BLOCK(memory, alloc) {
+        return undo_memory_delete_block(&memory->large_alloc_list,
+                                        &memory->large_alloc_list_count,
+                                        _if_in_block_ix);
+    }
+
+    return UNDO_BADPARAM;
 }
 
 size_t undo_memory_size(UNDO_MEMORY *memory, void *alloc) {
