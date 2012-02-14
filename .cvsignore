@@ -14,3 +14,4 @@ ltmain.sh
 missing
 mkinstalldirs
 ChangeLog*
+libundo-*.tar.gz
