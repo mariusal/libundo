@@ -2,7 +2,7 @@
 PATH=/bin:/usr/bin:/usr/local/bin
 export PATH
 
-scripts/CVSMake
+autoreconf --force
 
 cvs2cl.pl
 
